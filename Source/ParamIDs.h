@@ -32,9 +32,11 @@ namespace pid
     inline constexpr const char* osFilter   = "osfilter";
 }
 
-// Editor settings that are not parameters, saved as properties of the state tree
+// Settings that are not parameters, saved as properties of the state tree
 namespace prop
 {
     inline constexpr const char* scopeOpen = "scopeOpen";
     inline constexpr const char* uiScale   = "uiScale";
+    inline constexpr const char* preset    = "preset";       // name of the current preset
+    inline constexpr const char* presetIsUser = "presetUser"; // ... and whether it is a user preset
 }

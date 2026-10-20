@@ -3,6 +3,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
 #include "HyperDimEngine.h"
+#include "PresetManager.h"
 
 class HyperDimAudioProcessor : public juce::AudioProcessor
 {
@@ -45,6 +46,7 @@ public:
     bool isBypassedNow() const;
 
     juce::AudioProcessorValueTreeState apvts;
+    PresetManager presets { apvts };
     hd::Engine engine;
 
 private:

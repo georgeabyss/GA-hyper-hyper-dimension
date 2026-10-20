@@ -39,6 +39,15 @@ Retrig ("ZAP!") needs MIDI routed to the plugin: every note-on resets all voices
   The bass below about 150 Hz stays mono in every mode except FREQ SHIFT/PRISM where it is only gently touched.
 - Output loudness is matched to the input automatically (slow-rising, fast-falling gain), so changing the voice count, mixes, WIDE or DIMENSION does not change the overall level. The match is K-weighted (ITU-R BS.1770), so it follows perceived loudness, not raw power.
 
+## Presets (title bar)
+- Dot-matrix display between the title and the GA logo: one grid of square LEDs, the text is lit cells
+  of it (5 x 7 per letter). The number and the name; a star at the end once you change anything.
+- The arrows step through Factory, then User presets, and wrap around. Click the display for the list
+  (each preset shows its Spacey mode), Save, Save As, Rename, Delete and Show Presets Folder.
+- 16 factory presets, every Spacey mode at least twice. User presets: one `.hhdpreset` file each in
+  `~/Music/GA/Hyper! Hyper! Dimension/Presets` (easy to share).
+- A preset holds the sound only: oversampling, the anti-alias filter and Bypass stay as they are.
+
 ## Spacey (the widener) and Bass Mono
 - SPACEY group: MODE (Comb, Twin Drive, Phase Smear, Freq Shift, Prism, Lo-Fi Twins), SPACING and AMOUNT (blend, 0-100 %, 0 = off).
 - SPACING is mode specific, centre = the original setting: Comb = delay spacing of the peaks, Twin Drive = drive, Phase Smear = depth and speed, Freq Shift = shift in Hz (0.2-4.2), Prism = pan depth, Lo-Fi Twins = bit depth.
@@ -63,6 +72,8 @@ Retrig ("ZAP!") needs MIDI routed to the plugin: every note-on resets all voices
 ## Source layout
 - `HyperDimEngine.h`: the DSP (Hyper, Dimension, Spacey, dry/wet, bass mono, loudness match), no JUCE.
 - `PluginProcessor.*`: parameters, oversampling, retrig, bypass crossfade, the meter feed, session state.
+- `PresetManager.*`: factory presets, user preset files, loading and the edited star.
+- `PresetBar.*`: the dot-matrix preset display with its arrows and menu.
 - `ParamIDs.h`: every parameter ID in one place (never change them: sessions and hosts use them).
 - `UiStyle.*`: colours, fonts, drawing primitives (knobs, LED, recess, panels, screws, the GA logo), the look and feel.
 - `Controls.*`: Knob, StepBox, LampButton, SquareToggle, SectionLed, MenuBox and the right-click menu.

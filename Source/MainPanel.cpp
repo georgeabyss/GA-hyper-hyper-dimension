@@ -23,6 +23,8 @@ namespace
     constexpr int kSdDiv = kStripX + 264;
     constexpr int kSdOs = kStripX + 276, kSdFilt = kSdOs + 41, kSdSize = kSdFilt + 87;
 
+    constexpr int   kPresetX = 352, kPresetY = 15, kPresetW = 238, kPresetH = 24;   // centred between title and logo
+
     constexpr float kSizes[] = { 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f };
 
     // section name and the rule underneath (the LED is a component)
@@ -52,6 +54,7 @@ namespace
 
 MainPanel::MainPanel (HyperDimAudioProcessor& p)
     : proc (p),
+      presetBar (p.presets),
       unison (parameter (p, pid::unison)),
       rate   (parameter (p, pid::rate),     "Rate"),
       detune (parameter (p, pid::detune),   "Detune"),
@@ -77,7 +80,7 @@ MainPanel::MainPanel (HyperDimAudioProcessor& p)
             addAndMakeVisible (c);
         addAndMakeVisible (s.led);
     }
-    for (auto* c : std::initializer_list<juce::Component*> { &dryWet, &bassMono, &bypass, &osFactor, &osFilter, &sizeBox,
+    for (auto* c : std::initializer_list<juce::Component*> { &presetBar, &dryWet, &bassMono, &bypass, &osFactor, &osFilter, &sizeBox,
                                                              &correlation, &scopeButton })
         addAndMakeVisible (c);
     addChildComponent (goniometer);
@@ -148,6 +151,7 @@ void MainPanel::timerCallback()
 {
     updateSections();
     updateMeters();
+    presetBar.refresh();
 
     if (proc.getLatencySamples() != shownLatency)
     {
@@ -327,6 +331,8 @@ void MainPanel::resized()
     {
         k.setBounds (juce::roundToInt (cx) - 28, cy - 22, 56, 70);
     };
+
+    presetBar.setBounds (kPresetX, kPresetY, kPresetW, kPresetH);
 
     place (unison, hyperSlot (0), 30, 30);
     place (retrig, hyperSlot (1), 16, 16);

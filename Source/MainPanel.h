@@ -3,6 +3,7 @@
 #include "PluginProcessor.h"
 #include "Controls.h"
 #include "Meters.h"
+#include "PresetBar.h"
 
 // The whole faceplate at 100 %. The editor scales it for the window size.
 class MainPanel : public juce::Component, private juce::Timer
@@ -42,6 +43,8 @@ private:
     void paintTitle (juce::Graphics&);
 
     HyperDimAudioProcessor& proc;
+
+    PresetBar presetBar;   // in the title bar, between the name and the GA logo
 
     // HYPER | DIMENSION | SPACEY, each ending with its amount
     StepBox unison;

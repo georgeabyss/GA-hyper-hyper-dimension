@@ -287,6 +287,20 @@ HyperLookAndFeel::HyperLookAndFeel()
     setColour (juce::TooltipWindow::backgroundColourId,        juce::Colour (0xff17181b));
     setColour (juce::TooltipWindow::textColourId,              ui::text);
     setColour (juce::TooltipWindow::outlineColourId,           ui::purple.withAlpha (0.4f));
+
+    // preset dialogs (name, delete)
+    setColour (juce::AlertWindow::backgroundColourId,          juce::Colour (0xff17181b));
+    setColour (juce::AlertWindow::textColourId,                ui::text);
+    setColour (juce::AlertWindow::outlineColourId,             ui::purple.withAlpha (0.35f));
+    setColour (juce::TextButton::buttonColourId,               juce::Colour (0xff222327));
+    setColour (juce::TextButton::buttonOnColourId,             ui::purple);
+    setColour (juce::TextButton::textColourOffId,              ui::text);
+    setColour (juce::TextEditor::backgroundColourId,           juce::Colour (0xff08090a));
+    setColour (juce::TextEditor::textColourId,                 ui::text);
+    setColour (juce::TextEditor::highlightColourId,            ui::purple.withAlpha (0.45f));
+    setColour (juce::TextEditor::outlineColourId,              juce::Colour (0xff2a2c31));
+    setColour (juce::TextEditor::focusedOutlineColourId,       ui::purple);
+    setColour (juce::CaretComponent::caretColourId,            ui::purpleHi);
 }
 
 juce::Font HyperLookAndFeel::getPopupMenuFont()
