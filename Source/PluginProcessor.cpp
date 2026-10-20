@@ -271,6 +271,14 @@ void HyperDimAudioProcessor::applyBypass (juce::AudioBuffer<float>& buffer)
         return;
 
     const int chans = juce::jmin (buffer.getNumChannels(), 2);
+    if (! bypassMix.isSmoothing())
+    {
+        // fully bypassed: hand over the dry signal itself, untouched by anything the effect does
+        for (int ch = 0; ch < chans; ++ch)
+            buffer.copyFrom (ch, 0, dryBuffer, ch, 0, buffer.getNumSamples());
+        return;
+    }
+
     for (int i = 0; i < buffer.getNumSamples(); ++i)
     {
         const float m = bypassMix.getNextValue();

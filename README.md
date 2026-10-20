@@ -21,8 +21,11 @@ Retrig ("ZAP!") needs MIDI routed to the plugin: every note-on resets all voices
   or its amount is at 0: the LED goes dark, its controls are dimmed, and it is skipped (no CPU for Hyper).
   Old sessions with Unison 0 load with Hyper switched off, so they sound the same.
 - Phase guard (host parameter "Phase Guard", on by default): if the effect pushes the stereo correlation
-  below +0.2, the side signal is turned down until it is back there (narrows within 10 ms, widens again
-  over 400 ms). Width that was already in the input is left alone. Not stored in presets.
+  below +0.2, what the effect changed is pulled back until it is there again: first the side signal it
+  added, and only if that is not enough, the mid signal it took away (narrows within 10 ms, widens again
+  over 400 ms). The input itself is never touched: width it already had stays, and with every section
+  off the output is the input, sample for sample. Not stored in presets.
+- Bypass (or Dry/Wet at 0) outputs the dry input itself once the 20 ms crossfade is done.
 - Bypass or Dry/Wet at 0 bypasses the whole effect and dims everything that shapes the sound
   (Bypass, the settings and the meters stay bright).
 - one long rack faceplate, purple accent, silver gothic "GA" top right (company name in the build is also "GA").
@@ -73,7 +76,9 @@ Retrig ("ZAP!") needs MIDI routed to the plugin: every note-on resets all voices
   diagonals); open/closed is saved with the session.
 
 ## Source layout
-- `HyperDimEngine.h`: the DSP (Hyper, Dimension, Spacey, dry/wet, bass mono, loudness match), no JUCE.
+- `HyperDimEngine.*`: the DSP, no JUCE. One function per stage, in signal order: Hyper, Dimension, Spacey
+  (one function per mode), dry/wet, bass mono, phase guard, loudness match.
+- `DspBlocks.h`: the small building blocks (delay line, biquad, Linkwitz-Riley crossover, allpasses, Hilbert pair).
 - `PluginProcessor.*`: parameters, oversampling, retrig, bypass crossfade, the meter feed, session state.
 - `PresetManager.*`: factory presets, user preset files, loading and the edited star.
 - `PresetBar.*`: the dot-matrix preset display with its arrows and menu.
