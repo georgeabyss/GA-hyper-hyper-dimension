@@ -20,6 +20,9 @@ Retrig ("ZAP!") needs MIDI routed to the plugin: every note-on resets all voices
   section on/off instantly (20 ms fade, the knobs stay where they are). A section is off while its LED is off
   or its amount is at 0: the LED goes dark, its controls are dimmed, and it is skipped (no CPU for Hyper).
   Old sessions with Unison 0 load with Hyper switched off, so they sound the same.
+- Phase guard (host parameter "Phase Guard", on by default): if the effect pushes the stereo correlation
+  below +0.2, the side signal is turned down until it is back there (narrows within 10 ms, widens again
+  over 400 ms). Width that was already in the input is left alone. Not stored in presets.
 - Bypass or Dry/Wet at 0 bypasses the whole effect and dims everything that shapes the sound
   (Bypass, the settings and the meters stay bright).
 - one long rack faceplate, purple accent, silver gothic "GA" top right (company name in the build is also "GA").

@@ -30,6 +30,7 @@ namespace pid
     inline constexpr const char* bypass     = "bypass";
     inline constexpr const char* osFactor   = "os";
     inline constexpr const char* osFilter   = "osfilter";
+    inline constexpr const char* phaseGuard = "phaseguard";
 }
 
 // Settings that are not parameters, saved as properties of the state tree

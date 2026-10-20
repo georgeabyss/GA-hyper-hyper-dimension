@@ -20,8 +20,9 @@
 //             FREQ SHIFT   +/- 2.2 Hz single-sideband shift per channel (binaural beat)
 //             PRISM        8-band mid signal, every band auto-pans on its own LFO
 //             LO-FI TWINS  different bit depth + sample rate per channel
-//  OUTPUT     Global dry/wet, global bass mono, then a loudness match (K-weighted,
-//             ITU-R BS.1770) that keeps the output as loud as the input.
+//  OUTPUT     Global dry/wet, global bass mono, a phase guard (keeps the correlation the
+//             effect causes above +0.2), then a loudness match (K-weighted, ITU-R BS.1770)
+//             that keeps the output as loud as the input.
 //
 //  The engine can run oversampled (the host side up/downsamples); pass the factor
 //  to prepare() so the rate dependent parts sound the same at every factor.
@@ -187,6 +188,7 @@ public:
         float wideSpacing = 0.5f;  // 0..1 mode specific; 0.5 = the original setting of every mode
         float bassMonoHz = 20.0f;  // global: everything below is made mono; <= 20 = off
         float globalMix = 1.0f;    // global dry/wet 0..1
+        bool  phaseGuard = true;   // keep the correlation the effect adds above kGuardFloor
     };
 
     std::atomic<float> vizCents[kMaxVoices];
@@ -207,6 +209,9 @@ public:
         setupWide();
         tauCoef = 1.0 - std::exp (-1.0 / (0.002 * sr));
         powCoef = 1.0 - std::exp (-1.0 / (0.30 * sr));   // loudness window ~300 ms
+        guardPowCoef = 1.0 - std::exp (-1.0 / (0.05 * sr));  // phase guard: ~50 ms, quicker than the meter
+        guardDown = 1.0 - std::exp (-1.0 / (0.01 * sr));     // narrows quickly
+        guardUp = 1.0 - std::exp (-1.0 / (0.40 * sr));       // and widens again slowly
         gainCoef = 1.0 - std::exp (-1.0 / (0.12 * sr));  // gain rises slowly (~120 ms)
         attackCoef = 1.0 - std::exp (-1.0 / (0.008 * sr)); // and falls fast (~8 ms) so jumps never overshoot
         mixCoef = 1.0 - std::exp (-1.0 / (0.02 * sr));
@@ -231,6 +236,8 @@ public:
         for (int c = 0; c < 2; ++c)
             for (int k = 0; k < 2; ++k) { kwIn[c][k].reset(); kwOut[c][k].reset(); }
         gmS = (double) prm.globalMix;
+        guardInM = guardInS = guardOutM = guardOutS = 0.0;
+        sideGain = 1.0;
         amtS = (double) prm.wideAmount; spcS = (double) prm.wideSpacing;
         bmL.reset(); bmR.reset(); bmFreq = -1.0;
         for (int v = 0; v < kMaxVoices; ++v)
@@ -383,6 +390,29 @@ public:
                 outR = bass + rh;
             }
 
+            // ---- Phase guard: if the effect pushes the correlation below kGuardFloor, turn the side
+            //      signal down until it is back there. Width the input already had is left alone,
+            //      and nothing changes while the correlation is fine.
+            if (prm.phaseGuard && nCh > 1)
+            {
+                const double im = 0.5 * ((double) l + r), is = 0.5 * ((double) l - r);
+                const double om = 0.5 * ((double) outL + outR), os = 0.5 * ((double) outL - outR);
+                guardInM  += (im * im - guardInM)  * guardPowCoef;
+                guardInS  += (is * is - guardInS)  * guardPowCoef;
+                guardOutM += (om * om - guardOutM) * guardPowCoef;
+                guardOutS += (os * os - guardOutS) * guardPowCoef;
+
+                // correlation r = (M^2 - S^2) / (M^2 + S^2), so r >= floor  <=>  S^2 / M^2 <= (1 - floor) / (1 + floor)
+                constexpr double floorRatio = (1.0 - kGuardFloor) / (1.0 + kGuardFloor);
+                const double allowed = std::max (floorRatio, guardInS / (guardInM + 1.0e-12));
+                const double want = guardOutS > allowed * guardOutM ? std::sqrt (allowed * guardOutM / (guardOutS + 1.0e-12)) : 1.0;
+                sideGain += (want - sideGain) * (want < sideGain ? guardDown : guardUp);
+
+                const double side = os * sideGain;
+                outL = (float) (om + side);
+                outR = (float) (om - side);
+            }
+
             // ---- Loudness match: keep the output as loud as the input, whatever the voice
             //      count, mixes, widener or dimension do to it. Both sides are K-weighted, so
             //      added highs (drive, lo-fi) count as louder, the way the ear hears them.
@@ -423,9 +453,8 @@ private:
         xoL.set (150.0, sr); xoR.set (150.0, sr);
         dcFold.highpass (20.0, sr);
         combHp.highpass (200.0, sr);
-        prismLp0b.lowpass (150.0, sr);
         const double fc[7] = { 150.0, 300.0, 600.0, 1200.0, 2400.0, 4800.0, 9000.0 };
-        for (int k = 0; k < 7; ++k) prismLp[k].lowpass (fc[k], sr);
+        for (int k = 0; k < 7; ++k) prismXo[k].set (fc[k], sr);
         for (int k = 0; k < 8; ++k)
         {
             prismPhase[k] = twoPi * std::fmod (0.61803398875 * (k + 1), 1.0);
@@ -456,11 +485,11 @@ private:
     void resetWide()
     {
         wideLine.clear();
-        xoL.reset(); xoR.reset(); dcFold.reset(); combHp.reset(); prismLp0b.reset(); driveEnv = 0.05;
+        xoL.reset(); xoR.reset(); dcFold.reset(); combHp.reset(); driveEnv = 0.05;
         for (auto& a : smearL) a = {};
         for (auto& a : smearR) a = {};
         hilL.reset(); hilR.reset();
-        for (auto& b : prismLp) b.reset();
+        for (auto& x : prismXo) x.reset();
         crushAccL = crushAccR = 1.0; crushHoldL = crushHoldR = 0.0f;
     }
 
@@ -540,7 +569,9 @@ private:
                 for (int k = 0; k < 8; ++k)
                 {
                     float band;
-                    if (k < 7) { band = prismLp[k].process (rest); if (k == 0) band = prismLp0b.process (band); rest -= band; }
+                    // Linkwitz-Riley split: neighbouring bands stay in phase where they overlap, so
+                    // panning them apart never cancels in mono
+                    if (k < 7) { float hi; prismXo[k].split (rest, band, hi); rest = hi; }
                     else band = rest;
 
                     double pan = 0.0;
@@ -591,15 +622,18 @@ private:
     DelayLine dimLine, wideLine;
     int wideActive = 0;
     Crossover xoL, xoR;
-    Biquad dcFold, combHp, prismLp0b;
+    Biquad dcFold, combHp;
     double driveEnv = 0.05, driveCoef = 0.0002;
     double gmS = 1.0;
+    static constexpr double kGuardFloor = 0.2;   // lowest correlation the phase guard lets the effect cause
+    double guardPowCoef = 0.0001, guardDown = 0.001, guardUp = 0.0001;
+    double guardInM = 0.0, guardInS = 0.0, guardOutM = 0.0, guardOutS = 0.0, sideGain = 1.0;
     Biquad kwIn[2][2], kwOut[2][2];   // K-weighting for the loudness match, [channel][stage]
     std::array<float, kSmearTable> smearTable {};
     Allpass1 smearL[4], smearR[4];
     double smearPhase = 0.0, fsPhase = 0.0;
     Hilbert hilL, hilR;
-    Biquad prismLp[7];
+    Crossover prismXo[7];
     double prismPhase[8] {}, prismInc[8] {};
     double crushAccL = 1.0, crushAccR = 1.0, crushRatioL = 0.3, crushRatioR = 0.2;
     float crushHoldL = 0.0f, crushHoldR = 0.0f;

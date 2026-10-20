@@ -53,7 +53,7 @@ namespace
                                  { dimSize, 40 }, { dimMix, 20 }, { spaceyMode, loFiTwins }, { spaceyAmount, 45 }, { spaceySpacing, 40 } } },
             { "8-Bit Twins",   { { rate, 1.0f }, { detune, 10 }, { hyperMix, 40 }, { dimMix, 20 },
                                  { spaceyMode, loFiTwins }, { spaceySpacing, 100 } } },
-            { "Wide Load",     { { unison, 9 }, { detune, 25 }, { spread, 100 }, { hyperMix, 60 },
+            { "Wide Ahh",      { { unison, 9 }, { detune, 25 }, { spread, 100 }, { hyperMix, 60 },
                                  { dimSize, 80 }, { dimMix, 50 }, { spaceySpacing, 75 } } },
             { "Mono Safe-ish", { { detune, 16 }, { spread, 60 }, { hyperMix, 45 },
                                  { spaceyAmount, 70 }, { bassMono, 150 } } },

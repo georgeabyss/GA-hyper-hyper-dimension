@@ -77,6 +77,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout HyperDimAudioProcessor::crea
     toggle (pid::bypass, "Bypass", false);
     setting (pid::osFactor, "Oversampling", { "Off", "2x", "4x", "8x" }, 1);
     setting (pid::osFilter, "Anti-Alias Filter", { "Linear Phase", "Low Latency" }, 0);
+    toggle (pid::phaseGuard, "Phase Guard", true);   // added last, so the order above stays the same
     return { p.begin(), p.end() };
 }
 
@@ -171,6 +172,7 @@ hd::Engine::Params HyperDimAudioProcessor::engineParams() const
     p.wideSpacing = param (pid::spaceySpacing) * 0.01f;
     p.bassMonoHz = param (pid::bassMono);
     p.globalMix = param (pid::dryWet) * 0.01f;
+    p.phaseGuard = param (pid::phaseGuard) > 0.5f;
     return p;
 }
 
