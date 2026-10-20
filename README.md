@@ -6,6 +6,17 @@ Build, then install system-wide into /Library/Audio/Plug-Ins:
     cmake --build build
     ./install.sh        # asks for your admin password, copies + signs VST3 and AU
 
+The build is universal (Apple Silicon + Intel) and runs on macOS 11 (Big Sur) or newer.
+
+To make an installer for other people:
+
+    ./make_installer.sh   # builds, then writes dist/HyperHyperDimension-<version>.zip
+
+The zip holds the .pkg (choices: VST3, Audio Unit, standalone app) and "READ ME FIRST.txt".
+It is not signed with an Apple Developer ID, so on other Macs it is opened once via
+System Settings > Privacy & Security > Open Anyway (the read-me explains it). The installer
+pages are in `installer/`; the version comes from `project(... VERSION ...)` in CMakeLists.txt.
+
 If the build complains about the "!" in the product name, change PRODUCT_NAME in
 CMakeLists.txt to "Hyper Hyper Dimension" (the in-plugin title stays the same).
 

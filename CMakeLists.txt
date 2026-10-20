@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.22)
 
+# Universal build: one binary for Apple Silicon and Intel Macs, macOS 11 (Big Sur) or newer.
+# (Set before project(), so it also applies to the JUCE helper builds.)
+set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
+set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0")   # the oldest macOS the current C++ library supports
+
 project(HyperHyperDimension VERSION 0.7.0)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -14,6 +19,7 @@ add_subdirectory(${JUCE_DIR} JUCE)
 # so installing is done by ./install.sh (uses sudo) after the build.
 juce_add_plugin(HyperDim
     COMPANY_NAME "GA"
+    BUNDLE_ID com.ga.hyperhyperdimension
     PLUGIN_MANUFACTURER_CODE Gaau
     PLUGIN_CODE Hhd1
     FORMATS VST3 AU Standalone
