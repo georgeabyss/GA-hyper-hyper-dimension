@@ -73,7 +73,7 @@ private:
     double accLR = 0.0, accLL = 0.0, accRR = 0.0;
     int silentFrames = 0, shownLatency = -1;
     bool allOff = false;          // Bypass on or Dry/Wet at 0
-    float protectFlash = 0.0f;    // 0..1, the orange flash of the correlation box
+    float protectFlash = 0.0f;    // 0..1, the orange flash of the Phase Protect LED
     double protectHoldUntil = 0.0;
     bool sectionsKnown = false;
 

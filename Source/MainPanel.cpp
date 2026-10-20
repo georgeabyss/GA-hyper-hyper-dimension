@@ -99,7 +99,7 @@ MainPanel::MainPanel (HyperDimAudioProcessor& p)
     dmix.setTooltip ("Dimension mix. At 0 % the Dimension section is off.");
     wamt.setTooltip ("Spacey amount. At 0 % the Spacey section is off.");
     bypass.setTooltip ("Bypass: click-free, at the same loudness as the effect. Dry/Wet at 0 % bypasses too.");
-    phaseProtect.setTooltip ("Phase Protect: keeps the effect mono-compatible. The correlation meter flashes orange while it works.");
+    phaseProtect.setTooltip ("Phase Protect: keeps the effect mono-compatible. The LED flashes orange while it audibly pulls the width back.");
     scopeButton.setTooltip ("Show / hide the goniometer");
     osFilter.setTooltip ("Anti-alias filter: Linear Phase (cleanest, more latency) or Low Latency (minimal delay)");
     sizeBox.setTooltip ("Window size (or drag the bottom right corner)");
@@ -244,16 +244,17 @@ void MainPanel::updateMeters()
     if (goniometer.isVisible())
         goniometer.push (scopeL.data(), scopeR.data(), n);
 
-    // Phase Protect at work: the correlation box flashes orange (held 0.5 s, so short bursts are seen)
+    // Phase Protect making an audible difference (side pulled back by more than 2 dB): its LED
+    // flashes orange, held 0.5 s so short bursts are seen. Below 2 dB it only fine-tunes; measured
+    // on the factory presets, only those that would otherwise go negative get past 2 dB.
     const auto now = juce::Time::getMillisecondCounterHiRes();
-    if (! allOff && proc.engine.protectActivity.load (std::memory_order_relaxed) > 0.02f)
+    if (! allOff && proc.engine.protectActivity.load (std::memory_order_relaxed) > 0.206f)   // 1 - 10^(-2/20)
         protectHoldUntil = now + 500.0;
     const float flash = now < protectHoldUntil ? 0.5f + 0.5f * std::cos ((float) (now * 0.001) * juce::MathConstants<float>::twoPi * 1.4f) : 0.0f;
     if (std::abs (flash - protectFlash) > 0.01f)
     {
         protectFlash = flash;
-        correlation.setAlarm (flash);
-        repaint (juce::Rectangle<int> (kCorX, kStripY, kCorW, kStripH).expanded (6));
+        phaseProtect.setAlarm (flash);
     }
 }
 
@@ -334,18 +335,7 @@ void MainPanel::paint (juce::Graphics& g)
     g.drawVerticalLine (kSdDiv + 1, (float) kStripY + 6.0f, (float) (kStripY + kStripH) - 6.0f);
 
     // correlation box; the goniometer opens to its right
-    const auto corBox = juce::Rectangle<float> ((float) kCorX, (float) kStripY, (float) kCorW, (float) kStripH);
-    ui::drawInsetPanel (g, corBox);
-    if (protectFlash > 0.0f)   // Phase Protect at work
-    {
-        for (auto glow : { std::pair<float, float> { 5.0f, 0.12f }, { 2.5f, 0.25f } })
-        {
-            g.setColour (ui::alarm.withAlpha (glow.second * protectFlash));
-            g.drawRoundedRectangle (corBox.expanded (glow.first * 0.5f), 5.0f + glow.first * 0.5f, glow.first);
-        }
-        g.setColour (ui::alarm.withAlpha (0.95f * protectFlash));
-        g.drawRoundedRectangle (corBox.reduced (1.0f), 4.0f, 1.0f);
-    }
+    ui::drawInsetPanel (g, juce::Rectangle<float> ((float) kCorX, (float) kStripY, (float) kCorW, (float) kStripH));
 
     if (goniometer.isVisible())
     {

@@ -30,6 +30,7 @@ public:
 private:
     float proportion() const { return param.convertTo0to1 (value); }
     juce::Rectangle<float> nameArea() const;
+    juce::Rectangle<float> lockArea() const;   // the name plus the padlock after it: the click area
     juce::String valueString() const;
     float toTravel (float prop) const;
     float fromTravel (float t) const;
@@ -129,7 +130,11 @@ public:
         setClickingTogglesState (true);
         setMouseCursor (juce::MouseCursor::PointingHandCursor);
     }
+    void setAlarm (float amount) { if (std::abs (amount - alarm) > 0.01f) { alarm = amount; repaint(); } }   // 0..1, orange
     void paintButton (juce::Graphics&, bool isOver, bool isDown) override;
+
+private:
+    float alarm = 0.0f;
 };
 
 // small drop-down box for a setting that is not a parameter (window size)

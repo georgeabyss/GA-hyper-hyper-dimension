@@ -15,17 +15,12 @@ void CorrelationMeter::setTarget (float correlation, bool hasSignal)
     idle = ! hasSignal;
 }
 
-void CorrelationMeter::setAlarm (float amount)
-{
-    if (std::abs (amount - alarm) > 0.01f) { alarm = amount; repaint(); }
-}
-
 void CorrelationMeter::paint (juce::Graphics& g)
 {
     // CORRELATION  -1 [=====|==   ] +1  +0.82
     const float cy = (float) getHeight() * 0.5f;
     g.setFont (ui::font (6.5f, false, 0.15f));
-    g.setColour (ui::labelGrey.interpolatedWith (ui::alarm, alarm));   // orange while Phase Protect works
+    g.setColour (ui::labelGrey);
     g.drawText ("CORRELATION", juce::Rectangle<float> (4.0f, cy - 5.0f, 60.0f, 10.0f), juce::Justification::centredLeft, false);
 
     // the bar takes what is left between the label and the value
@@ -72,12 +67,14 @@ void Goniometer::push (const float* l, const float* r, int n)
     trail.multiplyAllAlphas (0.78f);   // persistence
     if (n > 0)
     {
+        // Auto gain, by the peak of the left or right channel: the diamond's edge is where one
+        // channel reaches the current peak, so no point can leave it. (With x = (R - L) / 2 and
+        // y = (L + R) / 2, |x| + |y| = max (|L|, |R|): the diamond is exactly the square L, R <= peak.)
         float peak = 0.0f;
         for (int i = 0; i < n; ++i)
-            peak = juce::jmax (peak, std::abs (l[i] + r[i]), std::abs (l[i] - r[i]));
-        peak *= 0.70710678f;
+            peak = juce::jmax (peak, std::abs (l[i]), std::abs (r[i]));
         env = juce::jmax (0.001f, peak > env ? peak : juce::jmax (peak, env * 0.97f));
-        const float gain = juce::jmin (16.0f, 0.9f / env);   // auto gain: quiet signals still fill the view
+        const float gain = juce::jmin (16.0f, 1.0f / env);   // quiet signals still fill the view
 
         juce::Graphics tg (trail);
         tg.addTransform (juce::AffineTransform::scale (2.0f));
@@ -87,8 +84,8 @@ void Goniometer::push (const float* l, const float* r, int n)
         const int stride = juce::jmax (1, n / 3000);
         for (int i = 0; i < n; i += stride)
         {
-            const float s = juce::jlimit (-1.05f, 1.05f, (r[i] - l[i]) * 0.70710678f * gain);   // left signal leans left
-            const float m = juce::jlimit (-1.05f, 1.05f, (l[i] + r[i]) * 0.70710678f * gain);
+            const float s = (r[i] - l[i]) * 0.5f * gain;   // left signal leans left
+            const float m = (l[i] + r[i]) * 0.5f * gain;
             tg.fillRect (cx + s * R - 0.6f, cy - m * R - 0.6f, 1.2f, 1.2f);
         }
     }

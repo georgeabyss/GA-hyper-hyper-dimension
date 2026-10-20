@@ -7,11 +7,10 @@ class CorrelationMeter : public juce::Component
 {
 public:
     void setTarget (float correlation, bool hasSignal);   // no signal: glides slowly back to 0
-    void setAlarm (float amount);                          // 0..1: how orange the label is (Phase Protect at work)
     void paint (juce::Graphics&) override;
 
 private:
-    float shown = 0.0f, alarm = 0.0f;
+    float shown = 0.0f;
     bool idle = true;   // no signal: drawn greyed out
 };
 

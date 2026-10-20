@@ -91,14 +91,12 @@ void Knob::paint (juce::Graphics& g)
         ui::drawMiniKnob (g, { 12.0f, cy }, proportion(), hot);
 
         // the name; with a lock it is the lock switch: lavender with a padlock while locked,
-        // brighter and underlined with a faint open padlock while hovered
+        // brighter with a faint open padlock while hovered
         const auto name = nameArea();
         const auto lockColour = juce::Colour (0xffb9a6e6);
         g.setColour (locked ? lockColour : overName ? juce::Colour (0xffc9cbd1) : ui::labelGrey);
         g.setFont (ui::font (6.5f, false, 0.15f));
         g.drawText (nameText.toUpperCase(), name, juce::Justification::centredLeft, false);
-        if (overName && ! locked)
-            g.fillRect (name.getX(), name.getBottom() - 0.5f, name.getWidth(), 0.6f);
         if (locked || overName)
             ui::drawPadlock (g, name.getRight() + 2.5f, name.getY() + 1.5f, ! locked,
                              locked ? ui::purple : ui::purple.withAlpha (0.4f));
@@ -130,6 +128,11 @@ juce::Rectangle<float> Knob::nameArea() const
     return { 26.0f, cy - 10.0f, std::ceil (w) + 1.0f, 9.0f };
 }
 
+juce::Rectangle<float> Knob::lockArea() const
+{
+    return nameArea().withTrimmedRight (-9.0f).expanded (1.0f, 2.0f);
+}
+
 void Knob::setLockable (std::function<void()> onClick)
 {
     onLockClick = std::move (onClick);
@@ -144,7 +147,7 @@ void Knob::setLocked (bool shouldBeLocked)
 
 void Knob::mouseMove (const juce::MouseEvent& e)
 {
-    const bool over = onLockClick != nullptr && style == Style::mini && nameArea().expanded (1.0f, 2.0f).contains (e.position);
+    const bool over = onLockClick != nullptr && style == Style::mini && lockArea().contains (e.position);
     if (over != overName)
     {
         overName = over;
@@ -562,7 +565,7 @@ void SectionLed::paintButton (juce::Graphics& g, bool isOver, bool)
 void LedToggle::paintButton (juce::Graphics& g, bool isOver, bool)
 {
     const float cy = (float) getHeight() * 0.5f;
-    ui::drawLed (g, { 5.0f, cy }, getToggleState());
+    ui::drawLed (g, { 5.0f, cy }, getToggleState(), alarm);
     g.setColour (isOver ? juce::Colour (0xffc9cbd1) : ui::labelGrey);
     g.setFont (ui::font (6.5f, false, 0.15f));
     g.drawText (getButtonText().toUpperCase(), juce::Rectangle<float> (13.0f, cy - 5.0f, (float) getWidth() - 13.0f, 10.0f),

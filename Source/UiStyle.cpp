@@ -236,17 +236,19 @@ namespace ui
 
 
     // round LED: lit while the section is active (its amount above 0)
-    void drawLed (juce::Graphics& g, juce::Point<float> c, bool on)
+    void drawLed (juce::Graphics& g, juce::Point<float> c, bool on, float alarm)
     {
         constexpr float r = 3.0f;
+        auto mix = [alarm] (juce::uint32 calm, juce::uint32 hot) { return juce::Colour (calm).interpolatedWith (juce::Colour (hot), alarm); };
+        const auto glow = mix (0xffb18cfe, 0xffff9a3c);
         if (on)
         {
-            g.setGradientFill (juce::ColourGradient (ui::purple.withAlpha (0.45f), c.x, c.y, ui::purple.withAlpha (0.0f), c.x + 6.5f, c.y, true));
+            g.setGradientFill (juce::ColourGradient (glow.withAlpha (0.45f + 0.2f * alarm), c.x, c.y, glow.withAlpha (0.0f), c.x + 6.5f, c.y, true));
             g.fillEllipse (c.x - 6.5f, c.y - 6.5f, 13.0f, 13.0f);
         }
-        juce::ColourGradient lens (on ? juce::Colour (0xfff3ecff) : juce::Colour (0xff3a3148), c.x - 0.6f, c.y - 0.9f,
-                                   on ? juce::Colour (0xff7c55d6) : juce::Colour (0xff1e1a26), c.x + r, c.y + r, true);
-        if (on) lens.addColour (0.55, ui::purple);
+        juce::ColourGradient lens (on ? mix (0xfff3ecff, 0xfffff0e0) : juce::Colour (0xff3a3148), c.x - 0.6f, c.y - 0.9f,
+                                   on ? mix (0xff7c55d6, 0xffc8641e) : juce::Colour (0xff1e1a26), c.x + r, c.y + r, true);
+        if (on) lens.addColour (0.55, glow);
         g.setGradientFill (lens);
         g.fillEllipse (c.x - r, c.y - r, r * 2.0f, r * 2.0f);
         g.setColour (juce::Colours::black);

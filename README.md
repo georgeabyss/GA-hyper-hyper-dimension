@@ -70,8 +70,8 @@ position is each mode's default, and the knob briefly holds there as you drag pa
   the ear hears it (K-weighted, ITU-R BS.1770). More voices, more width or more drive never make it
   louder, and Bypass compares at the same level. So you judge the sound, not the volume.
 - **Phase Protect** (on by default). If the effect pushes the stereo correlation below +0.2, it pulls
-  back what the effect changed until the signal is mono-compatible again, and the correlation meter
-  flashes orange while it does. It never touches your input: width the source already has stays, and
+  back what the effect changed until the signal is mono-compatible again. Its LED flashes orange
+  while it audibly narrows the sound (more than 2 dB); smaller corrections happen quietly. It never touches your input: width the source already has stays, and
   with all sections off the output is the input, sample for sample.
 - **Safety mute.** Absurd levels (above +24 dBFS) or broken audio (NaN) silence the plug-in at once,
   like REAPER does. The display shows *OUTPUT MUTED*; click it to resume.
@@ -97,12 +97,12 @@ position is each mode's default, and the knob briefly holds there as you drag pa
 6. **Bypass**, at equal loudness. Bypass and Dry/Wet at 0 % dim the whole interface.
 7. **Dry/Wet** for the whole effect. Click the name to lock it (padlock, as shown).
 8. **Bass Mono**: mono below this frequency. Click the name to lock it.
-9. **Phase Protect** on / off.
+9. **Phase Protect** on / off. The LED flashes orange while it audibly narrows the sound (as in the picture).
 10. **Oversampling.** The tooltip shows the current latency.
 11. **Anti-alias filter**: Linear Phase or Low Latency.
 12. **Window size**, 75–200 %. You can also drag the bottom right corner.
 13. **Correlation meter.** +1 is mono and 0 is very wide. Below 0 (red) means parts of the
-    signal cancel in mono. Flashes orange while Phase Protect works (as in the picture).
+    signal cancel in mono.
 14. **Goniometer.** Opens the stereo scope next to the meter:
 
 ![With the goniometer open](docs/goniometer.png)
