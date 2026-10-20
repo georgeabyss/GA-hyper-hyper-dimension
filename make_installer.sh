@@ -1,6 +1,6 @@
 #!/bin/bash
 # Builds the universal plug-ins and packs them into one macOS installer:
-#   dist/HyperHyperDimension-<version>.zip  =  the .pkg + "READ ME FIRST.txt"
+#   dist/HyperHyperDimension-<version>-macOS.zip  =  the .pkg + "READ ME FIRST.txt"
 # The installer offers VST3 and Audio Unit as separate choices.
 # Not signed with an Apple Developer ID: fine for sharing with friends, who open it
 # once via System Settings > Privacy & Security (see installer/READ ME FIRST.txt).
@@ -12,7 +12,7 @@ ID="com.ga.hyperhyperdimension"
 NAME="Hyper! Hyper! Dimension"
 ARTEFACTS="build/HyperDim_artefacts/Release"
 STAGE="build/installer"
-OUT="dist/HyperHyperDimension-$VERSION"
+OUT="dist/HyperHyperDimension-$VERSION-macOS"
 
 echo "== Building $NAME $VERSION (universal)"
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release > /dev/null
@@ -74,7 +74,7 @@ productbuild --distribution "$STAGE/distribution.xml" --resources installer \
              --package-path "$STAGE/pkgs" "$OUT.pkg" > /dev/null
 
 # the .pkg plus the how-to, zipped, ready to share
-ZIPDIR="$STAGE/zip/HyperHyperDimension-$VERSION"
+ZIPDIR="$STAGE/zip/HyperHyperDimension-$VERSION-macOS"
 mkdir -p "$ZIPDIR"
 cp "$OUT.pkg" "installer/READ ME FIRST.txt" "$ZIPDIR/"
 ditto -c -k --norsrc --noextattr --keepParent "$ZIPDIR" "$OUT.zip"

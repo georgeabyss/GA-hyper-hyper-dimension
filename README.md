@@ -123,7 +123,7 @@ position is each mode's default, and the knob briefly holds there as you drag pa
 
 Download the zip for your system from the [releases](https://github.com/georgeabyss/GA-hyper-hyper-dimension/releases).
 
-**macOS** (`HyperHyperDimension-<version>.zip`): unzip it and follow **READ ME FIRST.txt**. The
+**macOS** (`HyperHyperDimension-<version>-macOS.zip`): unzip it and follow **READ ME FIRST.txt**. The
 installer is not signed with a paid Apple certificate, so macOS asks you to allow it once. Then pick
 VST3 and/or Audio Unit. In Logic, the plug-in is under Audio Units → GA.
 To uninstall, delete `Hyper! Hyper! Dimension.vst3` from `/Library/Audio/Plug-Ins/VST3` and
@@ -145,7 +145,7 @@ Needs CMake, Ninja, the Xcode command line tools and [JUCE](https://juce.com) (e
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ./install.sh                  # copies the plug-ins to /Library/Audio/Plug-Ins (asks for your password)
-./make_installer.sh           # dist/HyperHyperDimension-<version>.zip, ready to share
+./make_installer.sh           # dist/HyperHyperDimension-<version>-macOS.zip, ready to share
 ./tools/make_screenshots.sh   # re-renders the images in docs/ from the real interface
 ```
 
