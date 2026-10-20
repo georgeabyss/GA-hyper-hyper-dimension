@@ -20,9 +20,16 @@ public:
     void mouseUp (const juce::MouseEvent&) override;
     void mouseDoubleClick (const juce::MouseEvent&) override;
     void mouseWheelMove (const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
+    void mouseMove (const juce::MouseEvent&) override;
+    void mouseExit (const juce::MouseEvent&) override;
+
+    // mini style only: clicking the name calls onLockClick (like Valhalla's mix lock)
+    void setLockable (std::function<void()> onLockClick);
+    void setLocked (bool shouldBeLocked);
 
 private:
     float proportion() const { return param.convertTo0to1 (value); }
+    juce::Rectangle<float> nameArea() const;
     juce::String valueString() const;
     float toTravel (float prop) const;
     float fromTravel (float t) const;
@@ -37,7 +44,8 @@ private:
     float detentWidth = 0.0f;   // in travel units (1 = full range)
     juce::ParameterAttachment attach;
     float value = 0.0f, travel = 0.0f, lastY = 0.0f;
-    bool dragging = false;
+    bool dragging = false, locked = false, overName = false;
+    std::function<void()> onLockClick;
     std::unique_ptr<juce::TextEditor> valueEditor;
 };
 
@@ -110,6 +118,18 @@ public:
 
 private:
     bool lit = true;
+};
+
+// round LED with a label after it; LED and label are one switch (Phase Protect)
+class LedToggle : public juce::Button
+{
+public:
+    explicit LedToggle (const juce::String& label) : juce::Button (label)
+    {
+        setClickingTogglesState (true);
+        setMouseCursor (juce::MouseCursor::PointingHandCursor);
+    }
+    void paintButton (juce::Graphics&, bool isOver, bool isDown) override;
 };
 
 // small drop-down box for a setting that is not a parameter (window size)

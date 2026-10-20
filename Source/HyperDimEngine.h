@@ -20,7 +20,7 @@
 //             FREQ SHIFT   +/- 2.2 Hz single-sideband shift per channel (binaural beat)
 //             PRISM        8-band mid signal, every band auto-pans on its own LFO
 //             LO-FI TWINS  different bit depth + sample rate per channel
-//  OUTPUT     Global dry/wet, global bass mono, a phase guard (keeps the correlation the
+//  OUTPUT     Global dry/wet, global bass mono, Phase Protect (keeps the correlation the
 //             effect causes above +0.2), then a loudness match (K-weighted, ITU-R BS.1770)
 //             that keeps the output as loud as the input.
 //
@@ -57,10 +57,11 @@ public:
         float wideSpacing = 0.5f;  // 0..1 mode specific; 0.5 = the original setting of every mode
         float bassMonoHz = 20.0f;  // global: everything below is made mono; <= 20 = off
         float globalMix = 1.0f;    // global dry/wet 0..1
-        bool  phaseGuard = true;   // keep the correlation the effect adds above kGuardFloor
+        bool  phaseProtect = true; // keep the correlation the effect adds above kGuardFloor
     };
 
     std::atomic<float> vizCents[kMaxVoices];
+    std::atomic<float> protectActivity { 0.0f };   // how far Phase Protect is pulling back right now, 0..1
 
     Engine() { for (auto& a : vizCents) a.store (0.0f); }
 
@@ -95,7 +96,7 @@ private:
     void spacey (float& outL, float& outR);
     void dryWet (float l, float r, float& outL, float& outR);
     void bassMono (float& outL, float& outR);
-    void phaseGuard (float l, float r, float& outL, float& outR);
+    void phaseProtect (float l, float r, float& outL, float& outR);
     void loudnessMatch (float l, float r, float& outL, float& outR);
     void updateViz (const Block&);
 
@@ -115,7 +116,7 @@ private:
     static constexpr double twoPi = 6.283185307179586;
     static constexpr double baseTau = 0.001;
     static constexpr int kSmearTable = 256;
-    static constexpr double kGuardFloor = 0.2;   // lowest correlation the phase guard lets the effect cause
+    static constexpr double kGuardFloor = 0.2;   // lowest correlation Phase Protect lets the effect cause
 
     Params prm;
     double sr = 44100.0;

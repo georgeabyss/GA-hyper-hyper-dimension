@@ -1,101 +1,162 @@
 # Hyper! Hyper! Dimension
 
-Build, then install system-wide into /Library/Audio/Plug-Ins:
+![Hyper! Hyper! Dimension](docs/interface.png)
 
-    cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DJUCE_DIR=$HOME/Downloads/JUCE
-    cmake --build build
-    ./install.sh        # asks for your admin password, copies + signs VST3 and AU
+A unison, dimension and stereo widening effect for macOS (VST3 and Audio Unit).
 
-The build is universal (Apple Silicon + Intel) and runs on macOS 11 (Big Sur) or newer.
+It is a take on **Hyper/Dimension**, the effect from **Xfer Records' Serum**. All credit for the
+original idea goes to Xfer Records; this is an independent re-implementation and not affiliated
+with or endorsed by them. The twist:
 
-To make an installer for other people:
+- **Up to 17 unison voices** instead of 7, with Retrig on every MIDI note.
+- **Spacey**, a third stage: a stereo widener with six very different modes.
+- **Never louder, never out of phase:** the output is matched to the input's loudness, and
+  Phase Protect keeps the effect mono-compatible.
+- **Built for real sessions:** presets, oversampling, a correlation meter and goniometer, and a
+  resizable interface.
 
-    ./make_installer.sh   # builds, then writes dist/HyperHyperDimension-<version>.zip
+**[Download the latest release](https://github.com/georgeabyss/GA-hyper-hyper-dimension/releases)**:
+macOS 11 or newer, Apple Silicon and Intel.
 
-The zip holds the .pkg (choices: VST3, Audio Unit, standalone app) and "READ ME FIRST.txt".
-It is not signed with an Apple Developer ID, so on other Macs it is opened once via
-System Settings > Privacy & Security > Open Anyway (the read-me explains it). The installer
-pages are in `installer/`; the version comes from `project(... VERSION ...)` in CMakeLists.txt.
+---
 
-If the build complains about the "!" in the product name, change PRODUCT_NAME in
-CMakeLists.txt to "Hyper Hyper Dimension" (the in-plugin title stays the same).
+## What it does
 
-Retrig ("ZAP!") needs MIDI routed to the plugin: every note-on resets all voices to zero detune.
+The signal runs through three sections, left to right. Each one ends with its amount: at 0 % the
+section is switched off and costs no CPU.
 
+### HYPER!: unison
+Up to 17 copies of the signal, each with its own slowly drifting pitch, beating against each other
+like a stack of detuned oscillators.
 
-## Interface (v0.8)
-- Window 802 x 192 at 100 % (978 wide with the goniometer open), resizable: drag the bottom right corner
-  (fixed aspect ratio, 60-250 %) or pick 75-200 % in the SIZE box. The size is saved with the session.
-- Main row: HYPER! | DIMENSION | SPACEY across the whole width. Each section ends with its amount
-  (Hyper Mix, Dimension Mix, Spacey Amount). The round LED at the right end of each header switches the
-  section on/off instantly (20 ms fade, the knobs stay where they are). A section is off while its LED is off
-  or its amount is at 0: the LED goes dark, its controls are dimmed, and it is skipped (no CPU for Hyper).
-  Old sessions with Unison 0 load with Hyper switched off, so they sound the same.
-- Phase guard (host parameter "Phase Guard", on by default): if the effect pushes the stereo correlation
-  below +0.2, what the effect changed is pulled back until it is there again: first the side signal it
-  added, and only if that is not enough, the mid signal it took away (narrows within 10 ms, widens again
-  over 400 ms). The input itself is never touched: width it already had stays, and with every section
-  off the output is the input, sample for sample. Not stored in presets.
-- Bypass (or Dry/Wet at 0) outputs the dry input itself once the 20 ms crossfade is done.
-- Bypass or Dry/Wet at 0 bypasses the whole effect and dims everything that shapes the sound
-  (Bypass, the settings and the meters stay bright).
-- one long rack faceplate, purple accent, silver gothic "GA" top right (company name in the build is also "GA").
-- UNISON: number box, click the small arrows, drag up/down, or use the mouse wheel.
-- RETRIG: only the small lens lamp reacts to clicks.
-- Knobs: the whole knob area (including value and name) reacts. Drag up/down (the cursor hides and never hits the
-  screen edge), Shift or Cmd for fine, wheel / trackpad, double-click or Alt-click resets to the default.
-  SPACING holds briefly at its centre (= the original setting of every mode) while you drag across it.
-- Right-click any knob or number/mode box: value list or "Enter value...", reset to default, and the host's own
-  items (automation, MIDI learn) where the host provides them (VST3).
-- SPACEY: MODE (click for the list; arrows and wheel step) | SPACING | AMOUNT.
-- UNISON: 1 to 17 voices.
-- SPACEY (the widener) has six modes:
-  COMB (staggered comb peaks, mono sum unchanged), TWIN DRIVE (different distortion per channel),
-  PHASE SMEAR (different moving allpass chains), FREQ SHIFT (+/- 2.2 Hz single-sideband beat),
-  PRISM (8 bands, each auto-pans on its own LFO), LO-FI TWINS (different bit depth / sample rate per channel).
-  The bass below about 150 Hz stays mono in every mode except FREQ SHIFT/PRISM where it is only gently touched.
-- Output loudness is matched to the input automatically (slow-rising, fast-falling gain), so changing the voice count, mixes, WIDE or DIMENSION does not change the overall level. The match is K-weighted (ITU-R BS.1770), so it follows perceived loudness, not raw power.
+| Control | |
+|---|---|
+| **Unison** | number of voices, 1–17 |
+| **Retrig** | restarts all voices in tune on every MIDI note, so each note starts focused and then spreads out ("laser zap"). Needs MIDI routed to the plug-in. |
+| **Rate** | how fast the voices drift |
+| **Detune** | how far they drift, in cents |
+| **Spread** | how far the voices are spread across the stereo field |
+| **Mix** | how much of the unison you hear |
 
-## Presets (title bar)
-- Dot-matrix display between the title and the GA logo: one grid of square LEDs, the text is lit cells
-  of it (5 x 7 per letter). The number and the name; a star at the end once you change anything.
-- The arrows step through Factory, then User presets, and wrap around. Click the display for the list
-  (each preset shows its Spacey mode), Save, Save As, Rename, Delete and Show Presets Folder.
-- 16 factory presets, every Spacey mode at least twice. User presets: one `.hhdpreset` file each in
-  `~/Music/GA/Hyper! Hyper! Dimension/Presets` (easy to share).
-- A preset holds the sound only: oversampling, the anti-alias filter and Bypass stay as they are.
+### DIMENSION: space
+Short, slowly moving delays, one per side and in opposite polarity: the classic chorus-ensemble
+width. **Size** sets the delay times, **Mix** the amount.
 
-## Spacey (the widener) and Bass Mono
-- SPACEY group: MODE (Comb, Twin Drive, Phase Smear, Freq Shift, Prism, Lo-Fi Twins), SPACING and AMOUNT (blend, 0-100 %, 0 = off).
-- SPACING is mode specific, centre = the original setting: Comb = delay spacing of the peaks, Twin Drive = drive, Phase Smear = depth and speed, Freq Shift = shift in Hz (0.2-4.2), Prism = pan depth, Lo-Fi Twins = bit depth.
+### SPACEY: the widener
+Six ways to make a signal wide. **Spacing** is the mode's main character control. Its centre
+position is each mode's default, and the knob briefly holds there as you drag past.
+**Amount** blends the effect in.
 
-## Bottom strip (output and settings) and the correlation box
-- DRY/WET (small dial): global mix of the whole effect. It sits before the loudness match, so every setting is equally loud.
-- BASS MONO (small dial): everything below the cutoff is summed to mono (dry and wet). Fully left = off.
-- BYPASS: real host-visible bypass, 20 ms crossfade, lit while the effect is active. The effect is loudness
-  matched to the input, so bypassing compares at equal loudness; the dry signal is delayed by the
-  oversampling latency so the crossfade stays in phase.
-- Oversampling: Off / 2x / 4x / 8x (default 2x), then the anti-alias filter: Linear Phase (FIR, more latency)
-  or Low Latency (IIR, minimal latency, non-linear phase), then the window size. All three are drop-downs.
-  The whole engine runs at the higher rate, which keeps the harmonics of Twin Drive and Lo-Fi Twins from folding
-  back as aliasing. The latency is reported to the host and shown in the oversampling tooltip. Not automatable (it changes the
-  latency). Costs CPU: 8x is 8 times the work. Phase Smear is corrected to sound the same at every factor.
-  At 4x/8x the Freq Shift 90-degree network gets less accurate in the lowest mids (~150-300 Hz).
-- Window size: 75-200 %, or drag the (purple) bottom right corner.
-- Correlation box (right): -1 .. +1 over about 150 ms; purple = in phase, red = out of phase. After ~200 ms of
-  silence it glides slowly back to 0 (about 1.5 s) and greys out. Its button opens the goniometer right next to it (auto gain, mid up, L/R on the
-  diagonals); open/closed is saved with the session.
+| Mode | What it does | Spacing |
+|---|---|---|
+| **Comb** | Two short delays, added to the left and subtracted from the right: comb filter peaks that differ per side. The mono sum stays exactly the same. | delay times |
+| **Twin Drive** | A different saturation on each side (soft clipping left, wave folding right). The bass stays mono. | drive |
+| **Phase Smear** | Two different, slowly moving phase shifters. Width without changing the tone. | depth and speed |
+| **Freq Shift** | Shifts the left side up and the right side down by a few hertz: a slow, rotating beat. | shift, 0.2–4.2 Hz |
+| **Prism** | Splits the signal into 8 bands and moves each one around the stereo field on its own LFO. | pan depth |
+| **Lo-Fi Twins** | A different bit depth and sample rate on each side. The bass stays mono. | crush depth |
 
-## Source layout
-- `HyperDimEngine.*`: the DSP, no JUCE. One function per stage, in signal order: Hyper, Dimension, Spacey
-  (one function per mode), dry/wet, bass mono, phase guard, loudness match.
-- `DspBlocks.h`: the small building blocks (delay line, biquad, Linkwitz-Riley crossover, allpasses, Hilbert pair).
-- `PluginProcessor.*`: parameters, oversampling, retrig, bypass crossfade, the meter feed, session state.
-- `PresetManager.*`: factory presets, user preset files, loading and the edited star.
-- `PresetBar.*`: the dot-matrix preset display with its arrows and menu.
-- `ParamIDs.h`: every parameter ID in one place (never change them: sessions and hosts use them).
-- `UiStyle.*`: colours, fonts, drawing primitives (knobs, LED, recess, panels, screws, the GA logo), the look and feel.
-- `Controls.*`: Knob, StepBox, LampButton, SquareToggle, SectionLed, MenuBox and the right-click menu.
-- `Meters.*`: correlation meter and goniometer.
-- `MainPanel.*`: the faceplate layout at 100 %, section on/off and dimming, the meters' timer.
-- `PluginEditor.*`: the resizable window that scales the faceplate.
+### Output
+- **Bypass**: a click-free crossfade to the untouched dry signal.
+- **Dry/Wet**: the whole effect against the dry signal. At 0 % it is bypassed, and the Bypass button
+  can't be clicked then, so turning Dry/Wet up always brings the effect back.
+- **Bass Mono**: everything below the chosen frequency is summed to mono. Fully left is off.
+- **Phase Protect**: keeps the effect mono-compatible (see below).
+- **Locks**: click the name *Dry/Wet* or *Bass Mono* to lock it. A padlock appears, and the value
+  stays where it is when you switch presets.
+
+### Under the hood
+- **Equal loudness.** The output is continuously matched to the input's loudness, measured the way
+  the ear hears it (K-weighted, ITU-R BS.1770). More voices, more width or more drive never make it
+  louder, and Bypass compares at the same level. So you judge the sound, not the volume.
+- **Phase Protect** (on by default). If the effect pushes the stereo correlation below +0.2, it pulls
+  back what the effect changed until the signal is mono-compatible again, and the correlation meter
+  flashes orange while it does. It never touches your input: width the source already has stays, and
+  with all sections off the output is the input, sample for sample.
+- **Safety mute.** Absurd levels (above +24 dBFS) or broken audio (NaN) silence the plug-in at once,
+  like REAPER does. The display shows *OUTPUT MUTED*; click it to resume.
+- **Oversampling** Off / 2× / 4× / 8× (default 2×) keeps Twin Drive and Lo-Fi Twins free of
+  aliasing. The anti-alias filter is either **Linear Phase** (cleanest) or **Low Latency**. The
+  added latency is reported to your DAW, which compensates for it.
+- **Presets.** 16 factory presets, from subtle to absurd, covering every Spacey mode. Your own
+  presets are single files in `~/Music/GA/Hyper! Hyper! Dimension/Presets`, easy to share.
+
+---
+
+## The interface
+
+![The interface, numbered](docs/interface-annotated.png)
+
+1. **Preset browser.** ◀ ▶ step through all presets. Click the display for the list, plus Save,
+   Rename and Delete. A star appears once you change anything.
+2. **Section LEDs.** Switch a section on or off without moving its knobs. Dark while the section
+   is off, either through its LED or because its amount is at 0. A section that is off is dimmed.
+3. **HYPER!**: Unison, Retrig, Rate, Detune, Spread, Mix.
+4. **DIMENSION**: Size, Mix.
+5. **SPACEY**: Mode, Spacing, Amount.
+6. **Bypass**, at equal loudness. Bypass and Dry/Wet at 0 % dim the whole interface.
+7. **Dry/Wet** for the whole effect. Click the name to lock it (padlock, as shown).
+8. **Bass Mono**: mono below this frequency. Click the name to lock it.
+9. **Phase Protect** on / off.
+10. **Oversampling.** The tooltip shows the current latency.
+11. **Anti-alias filter**: Linear Phase or Low Latency.
+12. **Window size**, 75–200 %. You can also drag the bottom right corner.
+13. **Correlation meter.** +1 is mono and 0 is very wide. Below 0 (red) means parts of the
+    signal cancel in mono. Flashes orange while Phase Protect works (as in the picture).
+14. **Goniometer.** Opens the stereo scope next to the meter:
+
+![With the goniometer open](docs/goniometer.png)
+
+**Handling**
+
+| | |
+|---|---|
+| Drag up / down | change a knob or number (hold Shift for fine steps) |
+| Double-click or Alt-click | back to the default |
+| Right-click | type a value, reset, or your DAW's automation and MIDI-learn options |
+| Mouse wheel | small steps |
+
+---
+
+## Installing
+
+Download the zip from the [releases](https://github.com/georgeabyss/GA-hyper-hyper-dimension/releases),
+unzip it and follow **READ ME FIRST.txt**. The installer is not signed with a paid Apple certificate,
+so macOS asks you to allow it once. Then pick VST3 and/or Audio Unit. In Logic, the plug-in is under
+Audio Units → GA.
+
+To uninstall, delete `Hyper! Hyper! Dimension.vst3` from `/Library/Audio/Plug-Ins/VST3` and
+`Hyper! Hyper! Dimension.component` from `/Library/Audio/Plug-Ins/Components`.
+
+---
+
+## Building from source
+
+Needs CMake, Ninja, the Xcode command line tools and [JUCE](https://juce.com) (expected in
+`~/Downloads/JUCE`; otherwise pass `-DJUCE_DIR=...`).
+
+```sh
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+./install.sh                  # copies the plug-ins to /Library/Audio/Plug-Ins (asks for your password)
+./make_installer.sh           # dist/HyperHyperDimension-<version>.zip, ready to share
+./tools/make_screenshots.sh   # re-renders the images in docs/ from the real interface
+```
+
+The version number is set in `CMakeLists.txt` (`project(... VERSION ...)`).
+
+| Source | |
+|---|---|
+| `HyperDimEngine.*`, `DspBlocks.h` | the DSP, without JUCE: one function per stage and per Spacey mode |
+| `PluginProcessor.*`, `ParamIDs.h` | parameters, oversampling, bypass, session state |
+| `PresetManager.*` | factory and user presets |
+| `MainPanel.*`, `PresetBar.*`, `Controls.*`, `Meters.*`, `UiStyle.*` | the interface |
+| `PluginEditor.*` | the resizable window |
+
+---
+
+## Credits
+
+- The Hyper/Dimension idea: [Xfer Records](https://xferrecords.com), from Serum.
+- Built with [JUCE](https://juce.com).
+- Made by GA.

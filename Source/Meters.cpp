@@ -15,15 +15,21 @@ void CorrelationMeter::setTarget (float correlation, bool hasSignal)
     idle = ! hasSignal;
 }
 
+void CorrelationMeter::setAlarm (float amount)
+{
+    if (std::abs (amount - alarm) > 0.01f) { alarm = amount; repaint(); }
+}
+
 void CorrelationMeter::paint (juce::Graphics& g)
 {
     // CORRELATION  -1 [=====|==   ] +1  +0.82
     const float cy = (float) getHeight() * 0.5f;
     g.setFont (ui::font (6.5f, false, 0.15f));
-    g.setColour (ui::labelGrey);
+    g.setColour (ui::labelGrey.interpolatedWith (ui::alarm, alarm));   // orange while Phase Protect works
     g.drawText ("CORRELATION", juce::Rectangle<float> (4.0f, cy - 5.0f, 60.0f, 10.0f), juce::Justification::centredLeft, false);
 
-    const auto bar = juce::Rectangle<float> (76.0f, cy - 4.5f, 120.0f, 9.0f);
+    // the bar takes what is left between the label and the value
+    const auto bar = juce::Rectangle<float> (72.0f, cy - 4.5f, (float) getWidth() - 72.0f - 52.0f, 9.0f);
     g.setFont (ui::font (6.0f));
     g.setColour (juce::Colour (0xff5d6068));
     g.drawText ("-1", juce::Rectangle<float> (bar.getX() - 12.0f, cy - 5.0f, 10.0f, 10.0f), juce::Justification::centredRight, false);

@@ -11,7 +11,11 @@ class PresetBar : public juce::Component, public juce::TooltipClient
 public:
     explicit PresetBar (PresetManager&);
 
-    void refresh();   // call regularly: picks up loads by the host and edits (the star)
+    void refresh();   // call regularly: picks up loads by the host, edits (the star) and the safety mute
+
+    // safety mute: while it is on, the display blinks a warning and a click resumes
+    std::function<bool()> isMuted;
+    std::function<void()> resume;
 
     void paint (juce::Graphics&) override;
     void mouseMove (const juce::MouseEvent&) override;
@@ -32,7 +36,7 @@ private:
 
     PresetManager& presets;
     juce::String text;          // what the display shows, e.g. "07 TWIN PEAKS"
-    bool modified = false, menuOpen = false;
+    bool modified = false, menuOpen = false, muted = false, blinkOn = true;
     Zone hover = Zone::none;
     juce::SharedResourcePointer<HyperLookAndFeel> dialogLook;   // outlives any dialog that is still open
 };

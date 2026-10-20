@@ -39,6 +39,7 @@ private:
     void timerCallback() override;
     void updateSections();               // LEDs and dimming, also for the whole effect bypassed
     void updateMeters();                 // correlation and goniometer from the processor's output
+    void updateOutputControls();         // Bypass (not clickable at Dry/Wet 0), locks, Phase Protect
     void setScopeOpen (bool open);
     void paintTitle (juce::Graphics&);
 
@@ -56,9 +57,10 @@ private:
     SectionLed hyperLed, dimLed, spaceyLed;
     std::array<Section, 3> sections;
 
-    // bottom strip: global output and settings
-    Knob dryWet, bassMono;
+    // bottom strip: Bypass | Dry/Wet, Bass Mono, Phase Protect | settings
     SquareToggle bypass { SquareToggle::Icon::power, true };   // lit while the effect is active
+    Knob dryWet, bassMono;
+    LedToggle phaseProtect { "Phase Protect" };
     StepBox osFactor, osFilter;
     MenuBox sizeBox;
 
@@ -71,9 +73,11 @@ private:
     double accLR = 0.0, accLL = 0.0, accRR = 0.0;
     int silentFrames = 0, shownLatency = -1;
     bool allOff = false;          // Bypass on or Dry/Wet at 0
+    float protectFlash = 0.0f;    // 0..1, the orange flash of the correlation box
+    double protectHoldUntil = 0.0;
     bool sectionsKnown = false;
 
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> retrigAtt, bypassAtt, ledAtt[3];
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> retrigAtt, bypassAtt, protectAtt, ledAtt[3];
     juce::Path gothicGA;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainPanel)

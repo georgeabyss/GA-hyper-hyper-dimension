@@ -261,6 +261,20 @@ namespace ui
                     juce::Justification::centred, false);
     }
 
+    void drawPadlock (juce::Graphics& g, float x, float y, bool open, juce::Colour colour)
+    {
+        juce::Path shackle;
+        shackle.startNewSubPath (x + 1.25f, y + 2.8f);
+        shackle.lineTo (x + 1.25f, y + 1.9f);
+        shackle.addCentredArc (x + 2.5f, y + 1.9f, 1.25f, 1.25f, 0.0f, -juce::MathConstants<float>::halfPi,
+                               juce::MathConstants<float>::halfPi, false);
+        if (! open)
+            shackle.lineTo (x + 3.75f, y + 2.8f);
+        g.setColour (colour);
+        g.strokePath (shackle, juce::PathStrokeType (0.8f));
+        g.fillRoundedRectangle (x + 0.5f, y + 2.75f, 4.0f, 3.0f, 0.5f);
+    }
+
     void drawHoverWash (juce::Graphics& g, juce::Rectangle<float> r)
     {
         g.setColour (juce::Colours::white.withAlpha (0.04f));

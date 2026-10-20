@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.22)
 set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
 set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0")   # the oldest macOS the current C++ library supports
 
-project(HyperHyperDimension VERSION 0.8.0)
+project(HyperHyperDimension VERSION 0.9.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -22,7 +22,7 @@ juce_add_plugin(HyperDim
     BUNDLE_ID com.ga.hyperhyperdimension
     PLUGIN_MANUFACTURER_CODE Gaau
     PLUGIN_CODE Hhd1
-    FORMATS VST3 AU Standalone
+    FORMATS VST3 AU
     PRODUCT_NAME "Hyper! Hyper! Dimension"
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT TRUE
@@ -45,9 +45,21 @@ target_compile_definitions(HyperDim
 
 target_link_libraries(HyperDim
     PRIVATE
-        juce::juce_audio_utils
         juce::juce_audio_processors
         juce::juce_gui_basics
         juce::juce_dsp
     PUBLIC
-        juce::juce_recommended_config_flags)
+        juce::juce_recommended_config_flags
+        juce::juce_recommended_lto_flags)   # link-time optimisation: smaller and faster
+
+# leave out JUCE code the plug-in never calls
+target_link_options(HyperDim INTERFACE $<$<CONFIG:Release>:-Wl,-dead_strip>)
+
+# Screenshot tool for the README (renders the real interface into docs/*.png).
+# Build it in its own folder, so it never ends up in the plug-ins: see tools/make_screenshots.sh
+option(HHD_SCREENSHOTS "Build the tool that renders the README screenshots" OFF)
+if(HHD_SCREENSHOTS)
+    target_sources(HyperDim PRIVATE tools/Screenshots.cpp)
+    add_executable(HyperDimScreenshots tools/ScreenshotsMain.cpp)
+    target_link_libraries(HyperDimScreenshots PRIVATE HyperDim)
+endif()

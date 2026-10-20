@@ -28,6 +28,12 @@ public:
     juce::String currentName() const;
     bool isModified() const;                     // the settings differ from the preset as saved
 
+    // Dry/Wet and Bass Mono can be locked: a locked value stays when a preset loads.
+    // The locks are saved with the session, not in presets.
+    static bool isLockable (const char* id);
+    bool isLocked (const char* id) const;
+    void setLocked (const char* id, bool locked);
+
     void load (int index);
     void step (int delta);                       // previous / next, wraps around
     bool save (const juce::String& name);        // as a user preset; replaces one of the same name

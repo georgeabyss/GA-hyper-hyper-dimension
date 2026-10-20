@@ -77,7 +77,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout HyperDimAudioProcessor::crea
     toggle (pid::bypass, "Bypass", false);
     setting (pid::osFactor, "Oversampling", { "Off", "2x", "4x", "8x" }, 1);
     setting (pid::osFilter, "Anti-Alias Filter", { "Linear Phase", "Low Latency" }, 0);
-    toggle (pid::phaseGuard, "Phase Guard", true);   // added last, so the order above stays the same
+    toggle (pid::phaseProtect, "Phase Protect", true);   // added last, so the order above stays the same
     return { p.begin(), p.end() };
 }
 
@@ -172,7 +172,7 @@ hd::Engine::Params HyperDimAudioProcessor::engineParams() const
     p.wideSpacing = param (pid::spaceySpacing) * 0.01f;
     p.bassMonoHz = param (pid::bassMono);
     p.globalMix = param (pid::dryWet) * 0.01f;
-    p.phaseGuard = param (pid::phaseGuard) > 0.5f;
+    p.phaseProtect = param (pid::phaseProtect) > 0.5f;
     return p;
 }
 
@@ -212,6 +212,21 @@ void HyperDimAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         return;
 
     updateOversampling();
+
+    // Safety mute (like REAPER): on absurd levels or broken audio the output goes silent and stays
+    // silent until the user resumes (click on the preset display).
+    if (resumeRequested.exchange (false))
+    {
+        resetDsp();
+        safetyMuted = false;
+        fadeIn = true;
+    }
+    if (safetyMuted || isAbsurd (buffer))   // checked on the input ...
+    {
+        silence (buffer);
+        return;
+    }
+
     storeDry (buffer);
     engine.setParams (engineParams());
 
@@ -241,7 +256,43 @@ void HyperDimAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     }
 
     applyBypass (buffer);
+    if (isAbsurd (buffer))   // ... and on the output
+    {
+        silence (buffer);
+        return;
+    }
     pushScope (buffer);
+}
+
+bool HyperDimAudioProcessor::isAbsurd (const juce::AudioBuffer<float>& buffer) const
+{
+    for (int ch = 0; ch < juce::jmin (buffer.getNumChannels(), 2); ++ch)
+    {
+        const auto* x = buffer.getReadPointer (ch);
+        for (int i = 0; i < buffer.getNumSamples(); ++i)
+            if (! (std::abs (x[i]) <= kAbsurdLevel))   // also catches NaN and infinity
+                return true;
+    }
+    return false;
+}
+
+void HyperDimAudioProcessor::silence (juce::AudioBuffer<float>& buffer)
+{
+    if (! safetyMuted)
+    {
+        safetyMuted = true;
+        resetDsp();   // a filter or delay that took in the bad values would keep producing them
+    }
+    buffer.clear();
+    pushScope (buffer);
+}
+
+void HyperDimAudioProcessor::resetDsp()
+{
+    engine.reset();
+    if (activeOs != nullptr)
+        activeOs->reset();
+    dryDelay.clear();
 }
 
 void HyperDimAudioProcessor::storeDry (const juce::AudioBuffer<float>& buffer)

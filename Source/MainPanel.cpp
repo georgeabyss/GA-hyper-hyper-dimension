@@ -10,7 +10,7 @@ namespace
     constexpr int   kHyperX = 26,  kHyperW = 396;
     constexpr int   kDimX   = 434, kDimW   = 132;
     constexpr int   kSpX    = 578, kSpW    = 198;   // "Spacey" (the widener)
-    constexpr int   kStripX = 26,  kStripY = 156, kStripW = 456, kStripH = 28;   // output + settings
+    constexpr int   kStripX = 26,  kStripY = 156, kStripW = 493, kStripH = 28;   // output + settings
     constexpr int   kCorX   = kStripX + kStripW + 10, kCorW = ui::kWidth - 26 - kCorX;   // correlation box
     constexpr int   kScopeX = ui::kWidth - 14, kScopeY = 14, kScopeSize = ui::kHeight - 28;
 
@@ -18,10 +18,10 @@ namespace
     float dimSlot   (int i) { return (float) kDimX   + kPitch * ((float) i + 0.5f); }
     float spSlot    (int i) { return (float) kSpX    + kPitch * ((float) i + 0.5f); }
 
-    // bottom strip, x positions
-    constexpr int kSdDryWet = kStripX + 10, kSdBass = kStripX + 92, kSdBypass = kStripX + 184;
-    constexpr int kSdDiv = kStripX + 264;
-    constexpr int kSdOs = kStripX + 276, kSdFilt = kSdOs + 41, kSdSize = kSdFilt + 87;
+    // bottom strip, x positions: Bypass | Dry/Wet, Bass Mono, Phase Protect | oversampling, filter, size
+    constexpr int kSdBypass = kStripX + 9, kSdDryWet = kStripX + 36, kSdBass = kStripX + 118, kSdProtect = kStripX + 206;
+    constexpr int kSdDiv = kStripX + 301;
+    constexpr int kSdOs = kStripX + 313, kSdFilt = kSdOs + 41, kSdSize = kSdFilt + 87;
 
     constexpr int   kPresetX = 352, kPresetY = 15, kPresetW = 238, kPresetH = 24;   // centred between title and logo
 
@@ -37,13 +37,6 @@ namespace
         g.drawHorizontalLine (kPanelY + 20, (float) x, (float) (x + w));
         g.setColour (juce::Colour (0xff2a2c31));
         g.drawHorizontalLine (kPanelY + 21, (float) x, (float) (x + w));
-    }
-
-    void drawStripLabel (juce::Graphics& g, int x, int w, const juce::String& text)
-    {
-        g.setFont (ui::font (6.5f, false, 0.15f));
-        g.setColour (ui::labelGrey);
-        g.drawText (text, x, kStripY, w, kStripH, juce::Justification::centredLeft, false);
     }
 
     juce::RangedAudioParameter& parameter (HyperDimAudioProcessor& p, const char* id)
@@ -80,7 +73,7 @@ MainPanel::MainPanel (HyperDimAudioProcessor& p)
             addAndMakeVisible (c);
         addAndMakeVisible (s.led);
     }
-    for (auto* c : std::initializer_list<juce::Component*> { &presetBar, &dryWet, &bassMono, &bypass, &osFactor, &osFilter, &sizeBox,
+    for (auto* c : std::initializer_list<juce::Component*> { &presetBar, &bypass, &dryWet, &bassMono, &phaseProtect, &osFactor, &osFilter, &sizeBox,
                                                              &correlation, &scopeButton })
         addAndMakeVisible (c);
     addChildComponent (goniometer);
@@ -88,6 +81,14 @@ MainPanel::MainPanel (HyperDimAudioProcessor& p)
     using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
     retrigAtt = std::make_unique<ButtonAttachment> (p.apvts, pid::retrig, retrig);
     bypassAtt = std::make_unique<ButtonAttachment> (p.apvts, pid::bypass, bypass);
+    protectAtt = std::make_unique<ButtonAttachment> (p.apvts, pid::phaseProtect, phaseProtect);
+
+    // Dry/Wet and Bass Mono: click the name to lock the value against preset changes
+    for (auto [knob, id] : { std::pair<Knob*, const char*> { &dryWet, pid::dryWet }, { &bassMono, pid::bassMono } })
+        knob->setLockable ([this, id = id] { proc.presets.setLocked (id, ! proc.presets.isLocked (id)); updateOutputControls(); });
+
+    presetBar.isMuted = [&p] { return p.isSafetyMuted(); };
+    presetBar.resume = [&p] { p.resumeAfterSafetyMute(); };
     for (size_t i = 0; i < sections.size(); ++i)
         ledAtt[i] = std::make_unique<ButtonAttachment> (p.apvts, sections[i].onId, *sections[i].led);
 
@@ -98,6 +99,7 @@ MainPanel::MainPanel (HyperDimAudioProcessor& p)
     dmix.setTooltip ("Dimension mix. At 0 % the Dimension section is off.");
     wamt.setTooltip ("Spacey amount. At 0 % the Spacey section is off.");
     bypass.setTooltip ("Bypass: click-free, at the same loudness as the effect. Dry/Wet at 0 % bypasses too.");
+    phaseProtect.setTooltip ("Phase Protect: keeps the effect mono-compatible. The correlation meter flashes orange while it works.");
     scopeButton.setTooltip ("Show / hide the goniometer");
     osFilter.setTooltip ("Anti-alias filter: Linear Phase (cleanest, more latency) or Low Latency (minimal delay)");
     sizeBox.setTooltip ("Window size (or drag the bottom right corner)");
@@ -150,6 +152,7 @@ void MainPanel::setScopeOpen (bool open)
 void MainPanel::timerCallback()
 {
     updateSections();
+    updateOutputControls();
     updateMeters();
     presetBar.refresh();
 
@@ -193,6 +196,22 @@ void MainPanel::updateSections()
     repaint();   // headers and the names of Unison, Retrig and Mode are drawn here
 }
 
+// Bypass, the locks and Phase Protect's dimming; cheap, so it runs on every timer tick
+void MainPanel::updateOutputControls()
+{
+    // at Dry/Wet 0 the effect is already bypassed: Bypass cannot be clicked then, so turning
+    // Dry/Wet up again always brings the effect back
+    const bool canBypass = proc.apvts.getRawParameterValue (pid::dryWet)->load() > 0.0f;
+    if (bypass.isEnabled() != canBypass)
+    {
+        bypass.setEnabled (canBypass);
+        bypass.setAlpha (canBypass ? 1.0f : 0.35f);
+    }
+    phaseProtect.setAlpha (allOff ? ui::kDimAlpha : 1.0f);
+    dryWet.setLocked (proc.presets.isLocked (pid::dryWet));
+    bassMono.setLocked (proc.presets.isLocked (pid::bassMono));
+}
+
 void MainPanel::updateMeters()
 {
     const int n = proc.readScope (scopeL.data(), scopeR.data(), (int) scopeL.size());
@@ -224,6 +243,18 @@ void MainPanel::updateMeters()
 
     if (goniometer.isVisible())
         goniometer.push (scopeL.data(), scopeR.data(), n);
+
+    // Phase Protect at work: the correlation box flashes orange (held 0.5 s, so short bursts are seen)
+    const auto now = juce::Time::getMillisecondCounterHiRes();
+    if (! allOff && proc.engine.protectActivity.load (std::memory_order_relaxed) > 0.02f)
+        protectHoldUntil = now + 500.0;
+    const float flash = now < protectHoldUntil ? 0.5f + 0.5f * std::cos ((float) (now * 0.001) * juce::MathConstants<float>::twoPi * 1.4f) : 0.0f;
+    if (std::abs (flash - protectFlash) > 0.01f)
+    {
+        protectFlash = flash;
+        correlation.setAlarm (flash);
+        repaint (juce::Rectangle<int> (kCorX, kStripY, kCorW, kStripH).expanded (6));
+    }
 }
 
 void MainPanel::paintTitle (juce::Graphics& g)
@@ -297,14 +328,24 @@ void MainPanel::paint (juce::Graphics& g)
 
     // bottom strip: global output and settings
     ui::drawInsetPanel (g, juce::Rectangle<float> ((float) kStripX, (float) kStripY, (float) kStripW, (float) kStripH));
-    drawStripLabel (g, kSdBypass + 24, 50, "BYPASS");
     g.setColour (juce::Colours::black);
     g.drawVerticalLine (kSdDiv, (float) kStripY + 6.0f, (float) (kStripY + kStripH) - 6.0f);
     g.setColour (juce::Colour (0xff2a2c31));
     g.drawVerticalLine (kSdDiv + 1, (float) kStripY + 6.0f, (float) (kStripY + kStripH) - 6.0f);
 
     // correlation box; the goniometer opens to its right
-    ui::drawInsetPanel (g, juce::Rectangle<float> ((float) kCorX, (float) kStripY, (float) kCorW, (float) kStripH));
+    const auto corBox = juce::Rectangle<float> ((float) kCorX, (float) kStripY, (float) kCorW, (float) kStripH);
+    ui::drawInsetPanel (g, corBox);
+    if (protectFlash > 0.0f)   // Phase Protect at work
+    {
+        for (auto glow : { std::pair<float, float> { 5.0f, 0.12f }, { 2.5f, 0.25f } })
+        {
+            g.setColour (ui::alarm.withAlpha (glow.second * protectFlash));
+            g.drawRoundedRectangle (corBox.expanded (glow.first * 0.5f), 5.0f + glow.first * 0.5f, glow.first);
+        }
+        g.setColour (ui::alarm.withAlpha (0.95f * protectFlash));
+        g.drawRoundedRectangle (corBox.reduced (1.0f), 4.0f, 1.0f);
+    }
 
     if (goniometer.isVisible())
     {
@@ -353,9 +394,10 @@ void MainPanel::resized()
         s.led->setBounds (juce::Rectangle<int> (14, 14).withCentre ({ s.x + s.w - 10, kPanelY + 10 }));
 
     const int scy = kStripY + kStripH / 2;
+    bypass.setBounds   (kSdBypass, scy - 9, 18, 18);
     dryWet.setBounds   (kSdDryWet, kStripY + 1, 78, kStripH - 2);
     bassMono.setBounds (kSdBass,   kStripY + 1, 86, kStripH - 2);
-    bypass.setBounds   (kSdBypass, scy - 9, 18, 18);
+    phaseProtect.setBounds (kSdProtect, scy - 9, 84, 18);
     osFactor.setBounds (kSdOs,   scy - 8, 38, 17);
     osFilter.setBounds (kSdFilt, scy - 8, 84, 17);
     sizeBox.setBounds  (kSdSize, scy - 8, 42, 17);

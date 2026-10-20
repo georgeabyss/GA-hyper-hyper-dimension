@@ -45,6 +45,11 @@ public:
     // the Bypass button, or Dry/Wet at 0: both bypass the whole effect (and dim the editor)
     bool isBypassedNow() const;
 
+    // Safety mute: absurd levels (above +24 dBFS) or broken audio (NaN, infinity) silence the
+    // output until resumeAfterSafetyMute() is called.
+    bool isSafetyMuted() const { return safetyMuted; }
+    void resumeAfterSafetyMute() { resumeRequested = true; }
+
     juce::AudioProcessorValueTreeState apvts;
     PresetManager presets { apvts };
     hd::Engine engine;
@@ -60,6 +65,12 @@ private:
     void storeDry (const juce::AudioBuffer<float>&);
     void applyBypass (juce::AudioBuffer<float>&);
     void pushScope (const juce::AudioBuffer<float>&);
+    bool isAbsurd (const juce::AudioBuffer<float>&) const;
+    void silence (juce::AudioBuffer<float>&);   // the safety mute
+    void resetDsp();
+
+    static constexpr float kAbsurdLevel = 15.85f;   // +24 dBFS
+    std::atomic<bool> safetyMuted { false }, resumeRequested { false };
 
     juce::AudioProcessorParameter* bypassParam = nullptr;
     juce::AudioBuffer<float> dryBuffer;

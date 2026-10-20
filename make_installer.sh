@@ -1,7 +1,7 @@
 #!/bin/bash
 # Builds the universal plug-ins and packs them into one macOS installer:
 #   dist/HyperHyperDimension-<version>.zip  =  the .pkg + "READ ME FIRST.txt"
-# The installer offers VST3, Audio Unit and the standalone app as separate choices.
+# The installer offers VST3 and Audio Unit as separate choices.
 # Not signed with an Apple Developer ID: fine for sharing with friends, who open it
 # once via System Settings > Privacy & Security (see installer/READ ME FIRST.txt).
 set -e
@@ -28,6 +28,7 @@ component () {
     local root="$STAGE/root-$1"
     mkdir -p "$root"
     ditto "$ARTEFACTS/$2" "$root/$(basename "$2")"
+    strip -x "$root/$(basename "$2")/Contents/MacOS/"* 2> /dev/null   # debug symbols: not needed by users
     codesign --force --deep -s - "$root/$(basename "$2")"   # ad-hoc signature, needed on Apple Silicon
 
     # without this, the installer would "update" any copy it finds elsewhere (e.g. in this build folder)
@@ -44,7 +45,6 @@ component () {
 echo "== Packing"
 component vst3 "VST3/$NAME.vst3"            "/Library/Audio/Plug-Ins/VST3"
 component au   "AU/$NAME.component"         "/Library/Audio/Plug-Ins/Components" "--scripts $STAGE/scripts"
-component app  "Standalone/$NAME.app"       "/Applications"
 
 cat > "$STAGE/distribution.xml" <<EOF
 <?xml version="1.0" encoding="utf-8"?>
@@ -58,7 +58,6 @@ cat > "$STAGE/distribution.xml" <<EOF
     <choices-outline>
         <line choice="vst3"/>
         <line choice="au"/>
-        <line choice="app"/>
     </choices-outline>
     <choice id="vst3" title="VST3 plug-in" description="For Ableton Live, Bitwig, Cubase, Reaper, Studio One, FL Studio and others.">
         <pkg-ref id="$ID.vst3"/>
@@ -66,12 +65,8 @@ cat > "$STAGE/distribution.xml" <<EOF
     <choice id="au" title="Audio Unit" description="For Logic Pro, GarageBand and MainStage.">
         <pkg-ref id="$ID.au"/>
     </choice>
-    <choice id="app" title="Standalone app" description="Try it without a DAW.">
-        <pkg-ref id="$ID.app"/>
-    </choice>
     <pkg-ref id="$ID.vst3" version="$VERSION">vst3.pkg</pkg-ref>
     <pkg-ref id="$ID.au" version="$VERSION">au.pkg</pkg-ref>
-    <pkg-ref id="$ID.app" version="$VERSION">app.pkg</pkg-ref>
 </installer-gui-script>
 EOF
 

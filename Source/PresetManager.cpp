@@ -11,6 +11,14 @@ namespace
 
     constexpr const char* kExtension = ".hhdpreset";
 
+    // the state property that locks a parameter, or nullptr if it cannot be locked
+    const char* lockProperty (const char* id)
+    {
+        if (juce::String (id) == pid::dryWet)   return prop::lockDryWet;
+        if (juce::String (id) == pid::bassMono) return prop::lockBassMono;
+        return nullptr;
+    }
+
     enum Mode { comb, twinDrive, phaseSmear, freqShift, prism, loFiTwins };
 
     struct FactoryPreset
@@ -135,6 +143,23 @@ int PresetManager::currentIndex() const
     return -1;
 }
 
+bool PresetManager::isLockable (const char* id)
+{
+    return lockProperty (id) != nullptr;
+}
+
+bool PresetManager::isLocked (const char* id) const
+{
+    const auto* property = lockProperty (id);
+    return property != nullptr && (bool) apvts.state.getProperty (property, false);
+}
+
+void PresetManager::setLocked (const char* id, bool locked)
+{
+    if (const auto* property = lockProperty (id))
+        apvts.state.setProperty (property, locked, nullptr);
+}
+
 bool PresetManager::isModified() const
 {
     const int i = currentIndex();
@@ -142,6 +167,8 @@ bool PresetManager::isModified() const
         return true;
     for (auto* id : kPresetParams)
     {
+        if (isLocked (id))   // a locked value is the user's, not the preset's
+            continue;
         auto* param = apvts.getParameter (id);
         if (std::abs (param->getValue() - param->convertTo0to1 (valueOf (presets[(size_t) i], id))) > 1.0e-4f)
             return true;
@@ -162,6 +189,8 @@ void PresetManager::load (int index)
     const auto& p = presets[(size_t) index];
     for (auto* id : kPresetParams)
     {
+        if (isLocked (id))
+            continue;
         auto* param = apvts.getParameter (id);
         param->beginChangeGesture();
         param->setValueNotifyingHost (param->convertTo0to1 (valueOf (p, id)));

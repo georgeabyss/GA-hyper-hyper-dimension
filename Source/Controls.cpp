@@ -89,10 +89,19 @@ void Knob::paint (juce::Graphics& g)
     {
         const float cy = (float) getHeight() * 0.5f;
         ui::drawMiniKnob (g, { 12.0f, cy }, proportion(), hot);
-        g.setColour (ui::labelGrey);
+
+        // the name; with a lock it is the lock switch: lavender with a padlock while locked,
+        // brighter and underlined with a faint open padlock while hovered
+        const auto name = nameArea();
+        const auto lockColour = juce::Colour (0xffb9a6e6);
+        g.setColour (locked ? lockColour : overName ? juce::Colour (0xffc9cbd1) : ui::labelGrey);
         g.setFont (ui::font (6.5f, false, 0.15f));
-        g.drawText (nameText.toUpperCase(), juce::Rectangle<float> (26.0f, cy - 10.0f, (float) getWidth() - 26.0f, 9.0f),
-                    juce::Justification::centredLeft, false);
+        g.drawText (nameText.toUpperCase(), name, juce::Justification::centredLeft, false);
+        if (overName && ! locked)
+            g.fillRect (name.getX(), name.getBottom() - 0.5f, name.getWidth(), 0.6f);
+        if (locked || overName)
+            ui::drawPadlock (g, name.getRight() + 2.5f, name.getY() + 1.5f, ! locked,
+                             locked ? ui::purple : ui::purple.withAlpha (0.4f));
         if (valueEditor == nullptr)
         {
             g.setColour (valueColour);
@@ -114,10 +123,46 @@ void Knob::paint (juce::Graphics& g)
     ui::drawName (g, 28.0f, 22.0f, nameText);
 }
 
+juce::Rectangle<float> Knob::nameArea() const
+{
+    const float cy = (float) getHeight() * 0.5f;
+    const float w = juce::GlyphArrangement::getStringWidth (ui::font (6.5f, false, 0.15f), nameText.toUpperCase());
+    return { 26.0f, cy - 10.0f, std::ceil (w) + 1.0f, 9.0f };
+}
+
+void Knob::setLockable (std::function<void()> onClick)
+{
+    onLockClick = std::move (onClick);
+    setTooltip ("Drag up/down (Shift: fine). Double-click: default. Right-click: menu. "
+                "Click the name to lock it: a locked value stays when you switch presets.");
+}
+
+void Knob::setLocked (bool shouldBeLocked)
+{
+    if (shouldBeLocked != locked) { locked = shouldBeLocked; repaint(); }
+}
+
+void Knob::mouseMove (const juce::MouseEvent& e)
+{
+    const bool over = onLockClick != nullptr && style == Style::mini && nameArea().expanded (1.0f, 2.0f).contains (e.position);
+    if (over != overName)
+    {
+        overName = over;
+        setMouseCursor (over ? juce::MouseCursor::PointingHandCursor : juce::MouseCursor::UpDownResizeCursor);
+        repaint();
+    }
+}
+
+void Knob::mouseExit (const juce::MouseEvent&)
+{
+    if (overName) { overName = false; repaint(); }
+}
+
 void Knob::mouseDown (const juce::MouseEvent& e)
 {
     if (e.mods.isPopupMenu()) { showMenu(); return; }
     if (e.mods.isAltDown())   { resetToDefault(); return; }
+    if (overName && onLockClick != nullptr) { onLockClick(); return; }
 
     dragging = true;
     travel = toTravel (proportion());
@@ -511,6 +556,17 @@ void SectionLed::paintButton (juce::Graphics& g, bool isOver, bool)
         g.setColour (ui::purpleHi.withAlpha (0.45f));
         g.drawEllipse (c.x - 4.5f, c.y - 4.5f, 9.0f, 9.0f, 1.0f);
     }
+}
+
+//==============================================================================
+void LedToggle::paintButton (juce::Graphics& g, bool isOver, bool)
+{
+    const float cy = (float) getHeight() * 0.5f;
+    ui::drawLed (g, { 5.0f, cy }, getToggleState());
+    g.setColour (isOver ? juce::Colour (0xffc9cbd1) : ui::labelGrey);
+    g.setFont (ui::font (6.5f, false, 0.15f));
+    g.drawText (getButtonText().toUpperCase(), juce::Rectangle<float> (13.0f, cy - 5.0f, (float) getWidth() - 13.0f, 10.0f),
+                juce::Justification::centredLeft, false);
 }
 
 //==============================================================================

@@ -71,6 +71,15 @@ PresetBar::PresetBar (PresetManager& manager)
 
 void PresetBar::refresh()
 {
+    const bool nowMuted = isMuted != nullptr && isMuted();
+    const bool nowBlink = (juce::Time::getMillisecondCounter() / 450) % 2 == 0;
+    if (nowMuted != muted || (nowMuted && nowBlink != blinkOn))
+    {
+        muted = nowMuted;
+        blinkOn = nowBlink;
+        repaint();
+    }
+
     const int i = presets.currentIndex();
     const auto number = i >= 0 ? juce::String (i + 1).paddedLeft ('0', 2) : juce::String ("--");
     const auto newText = (number + " " + presets.currentName()).toUpperCase().substring (0, kSlots - 1);
@@ -145,10 +154,22 @@ void PresetBar::paintDisplay (juce::Graphics& g, juce::Rectangle<float> r)
                 if ((rows[(size_t) row] >> (4 - col)) & 1)
                     lit[(size_t) ((kTextRow + row) * kCols + kTextCol + slot * 6 + col)] = true;
     };
-    for (int i = 0; i < text.length() && i < kSlots - 1; ++i)
-        put (text[i], i);
-    if (modified)
-        put ('*', kSlots - 1);
+    if (muted)
+    {
+        if (blinkOn)
+        {
+            const juce::String warning ("! OUTPUT MUTED !");
+            for (int i = 0; i < warning.length(); ++i)
+                put (warning[i], i);
+        }
+    }
+    else
+    {
+        for (int i = 0; i < text.length() && i < kSlots - 1; ++i)
+            put (text[i], i);
+        if (modified)
+            put ('*', kSlots - 1);
+    }
 
     // the grid, centred in the glass: every cell is a square LED, lit or not
     const float gridW = (float) (kCols - 1) * kPitch + kDot, gridH = (float) (kRows - 1) * kPitch + kDot;
@@ -162,19 +183,20 @@ void PresetBar::paintDisplay (juce::Graphics& g, juce::Rectangle<float> r)
     g.fillPath (off);
 
     // glow: the lit dots blurred outwards in two soft passes, then the dots themselves
+    const auto glow = muted ? juce::Colour (0xffff6e32) : ui::purple;   // safety mute: orange-red
     for (auto pass : { std::pair<float, float> { 2.6f, 0.10f }, { 1.4f, 0.22f } })
     {
-        g.setColour (ui::purple.withAlpha (pass.second));
+        g.setColour (glow.withAlpha (pass.second));
         g.strokePath (on, juce::PathStrokeType (pass.first, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
     }
-    g.setColour (juce::Colour (0xfff1e9ff));
+    g.setColour (muted ? juce::Colour (0xffffd2b0) : juce::Colour (0xfff1e9ff));
     g.fillPath (on);
 
     // reflection on the glass and the frame (lavender while the list is open)
     g.setGradientFill (juce::ColourGradient (juce::Colours::white.withAlpha (0.05f), 0.0f, r.getY(),
                                              juce::Colours::white.withAlpha (0.0f), 0.0f, r.getCentreY(), false));
     g.fillRect (r.withHeight (r.getHeight() * 0.45f));
-    g.setColour (menuOpen ? ui::purple.withAlpha (0.7f) : juce::Colours::black);
+    g.setColour (muted ? juce::Colour (0xffff7832).withAlpha (0.8f) : menuOpen ? ui::purple.withAlpha (0.7f) : juce::Colours::black);
     g.drawRect (r, 1.0f);
 }
 
@@ -192,6 +214,8 @@ void PresetBar::mouseExit (const juce::MouseEvent&)
 
 juce::String PresetBar::getTooltip()
 {
+    if (muted)
+        return "Output muted: absurd level or broken audio was detected. Click to resume.";
     switch (hover)
     {
         case Zone::prev:    return "Previous preset";
@@ -204,6 +228,12 @@ juce::String PresetBar::getTooltip()
 
 void PresetBar::mouseDown (const juce::MouseEvent& e)
 {
+    if (muted)   // any click resumes
+    {
+        if (resume != nullptr)
+            resume();
+        return;
+    }
     switch (zoneAt (e.position))
     {
         case Zone::prev:    presets.step (-1); refresh(); break;

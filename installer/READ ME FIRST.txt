@@ -13,7 +13,7 @@ macOS 15 (Sequoia) and newer:
 macOS 11 to 14:
   Right-click (or Ctrl-click) the .pkg, choose "Open", then "Open" again.
 
-Then follow the installer. You can choose VST3, Audio Unit and / or the
-standalone app. Restart your DAW (or rescan plug-ins) afterwards.
+Then follow the installer. You can choose VST3 and / or Audio Unit.
+Restart your DAW (or rescan plug-ins) afterwards.
 
 Needs macOS 11 (Big Sur) or newer, Apple Silicon or Intel.

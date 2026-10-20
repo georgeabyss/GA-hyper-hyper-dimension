@@ -19,7 +19,7 @@ void Engine::prepare (double sampleRate, int channels, int oversampling)
     spaceCoef = coef (0.03);
     offDecay = std::exp (-1.0 / (0.4 * sr));
     driveCoef = coef (0.1);
-    guardPowCoef = coef (0.05);   // phase guard: ~50 ms, quicker than the meter
+    guardPowCoef = coef (0.05);   // Phase Protect: ~50 ms, quicker than the meter
     guardDown = coef (0.01);      // narrows quickly
     guardUp = coef (0.40);        // and widens again slowly
     powCoef = coef (0.30);        // loudness window ~300 ms
@@ -121,7 +121,7 @@ void Engine::process (float* const* io, int n)
         dryWet (l, r, outL, outR);
         if (block.bassMono)
             bassMono (outL, outR);
-        phaseGuard (l, r, outL, outR);
+        phaseProtect (l, r, outL, outR);
         loudnessMatch (l, r, outL, outR);
 
         io[0][i] = outL;
@@ -129,6 +129,8 @@ void Engine::process (float* const* io, int n)
     }
 
     updateViz (block);
+    protectActivity.store (prm.phaseProtect && nCh > 1 ? (float) (1.0 - std::min (sideGain, midGain)) : 0.0f,
+                           std::memory_order_relaxed);
 }
 
 //==============================================================================
@@ -222,9 +224,9 @@ void Engine::bassMono (float& outL, float& outR)
 // until the correlation is there again: first the side signal it added, and only if that is not
 // enough, the mid signal it took away (Prism lowers the mid when it pans bands outwards).
 // The input itself is never touched, so with every section off the output is exactly the input.
-void Engine::phaseGuard (float l, float r, float& outL, float& outR)
+void Engine::phaseProtect (float l, float r, float& outL, float& outR)
 {
-    if (! prm.phaseGuard || nCh < 2)
+    if (! prm.phaseProtect || nCh < 2)
         return;
 
     const double im = 0.5 * ((double) l + r), is = 0.5 * ((double) l - r);

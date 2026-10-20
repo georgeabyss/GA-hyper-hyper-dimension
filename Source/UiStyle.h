@@ -10,6 +10,7 @@ namespace ui
     inline const juce::Colour text      { 0xfff0f1f3 };
     inline const juce::Colour labelGrey { 0xff8f9299 };
     inline const juce::Colour warn      { 0xffff7a8a };   // negative correlation
+    inline const juce::Colour alarm     { 0xffff9a3c };   // Phase Protect at work, safety mute
 
     constexpr int kWidth = 802, kHeight = 192;   // size at 100 %
     constexpr int kScopeExtra = 176;             // added to the width while the goniometer is open
@@ -37,6 +38,9 @@ namespace ui
 
     // round section LED
     void drawLed (juce::Graphics&, juce::Point<float> centre, bool on);
+
+    // small padlock, 5 x 6, top left at (x, y); open = shackle lifted
+    void drawPadlock (juce::Graphics&, float x, float y, bool open, juce::Colour);
 
     void drawScrew (juce::Graphics&, float cx, float cy);
 
