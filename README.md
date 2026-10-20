@@ -2,7 +2,7 @@
 
 ![Hyper! Hyper! Dimension](docs/interface.png)
 
-A unison, dimension and stereo widening effect for macOS (VST3 and Audio Unit).
+A unison, dimension and stereo widening effect for macOS (VST3, Audio Unit) and Windows (VST3).
 
 It is a take on **Hyper/Dimension**, the effect from **Xfer Records' Serum**. All credit for the
 original idea goes to Xfer Records; this is an independent re-implementation and not affiliated
@@ -15,8 +15,9 @@ with or endorsed by them. The twist:
 - **Built for real sessions:** presets, oversampling, a correlation meter and goniometer, and a
   resizable interface.
 
-**[Download the latest release](https://github.com/georgeabyss/GA-hyper-hyper-dimension/releases)**:
-macOS 11 or newer, Apple Silicon and Intel.
+**[Download the latest release](https://github.com/georgeabyss/GA-hyper-hyper-dimension/releases)**: every release
+has a Mac zip (macOS 11 or newer, Apple Silicon and Intel) and a Windows zip (Windows 10 or 11, 64-bit).
+What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
@@ -120,13 +121,18 @@ position is each mode's default, and the knob briefly holds there as you drag pa
 
 ## Installing
 
-Download the zip from the [releases](https://github.com/georgeabyss/GA-hyper-hyper-dimension/releases),
-unzip it and follow **READ ME FIRST.txt**. The installer is not signed with a paid Apple certificate,
-so macOS asks you to allow it once. Then pick VST3 and/or Audio Unit. In Logic, the plug-in is under
-Audio Units → GA.
+Download the zip for your system from the [releases](https://github.com/georgeabyss/GA-hyper-hyper-dimension/releases).
 
+**macOS** (`HyperHyperDimension-<version>.zip`): unzip it and follow **READ ME FIRST.txt**. The
+installer is not signed with a paid Apple certificate, so macOS asks you to allow it once. Then pick
+VST3 and/or Audio Unit. In Logic, the plug-in is under Audio Units → GA.
 To uninstall, delete `Hyper! Hyper! Dimension.vst3` from `/Library/Audio/Plug-Ins/VST3` and
 `Hyper! Hyper! Dimension.component` from `/Library/Audio/Plug-Ins/Components`.
+
+**Windows** (`HyperHyperDimension-<version>-Windows-VST3.zip`): unzip it and copy the folder
+`Hyper! Hyper! Dimension.vst3` to `C:\Program Files\Common Files\VST3`, then rescan plug-ins in your DAW.
+To uninstall, delete that folder again. Your presets are in `Music\GA\Hyper! Hyper! Dimension\Presets`.
+The Windows build is new: if anything is off, please say so.
 
 ---
 
@@ -144,6 +150,10 @@ cmake --build build
 ```
 
 The version number is set in `CMakeLists.txt` (`project(... VERSION ...)`).
+
+The Windows build is made by GitHub Actions (`.github/workflows/build.yml`): every push to `main` builds it,
+and publishing a release attaches `HyperHyperDimension-<version>-Windows-VST3.zip` to it. For a release that
+already exists, run the workflow by hand (Actions → Build → Run workflow) and enter its tag, e.g. `v0.9.0`.
 
 | Source | |
 |---|---|

@@ -1,0 +1,60 @@
+# Builds the Windows VST3 on GitHub's own machines.
+#
+# - Every push to main: build only, the zip is under the run's "Artifacts" (for testing).
+# - Publishing a release: the zip is attached to that release, next to the Mac zip.
+# - By hand (Actions > Build > Run workflow): enter a release tag (e.g. v0.9.0) to attach the
+#   Windows zip to a release that already exists; leave it empty to just build.
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  release:
+    types: [ published ]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Attach the build to this existing release, e.g. v0.9.0 (empty: just build)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write   # needed to attach the zip to a release
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.release_tag || github.ref }}
+
+      - name: Get JUCE (the same version as the Mac builds)
+        run: git clone --depth 1 --branch 9.0.4 https://github.com/juce-framework/JUCE.git ../JUCE
+
+      - name: Configure
+        run: cmake -B build -DJUCE_DIR="${{ github.workspace }}/../JUCE"
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path CMakeLists.txt -Pattern 'HyperHyperDimension VERSION ([0-9.]+)').Matches[0].Groups[1].Value
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Compress-Archive -Path "build/HyperDim_artefacts/Release/VST3/*.vst3" -DestinationPath "dist/HyperHyperDimension-$version-Windows-VST3.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HyperHyperDimension-Windows-VST3
+          path: dist/*.zip
+
+      - name: Attach to the release
+        if: env.RELEASE_TAG != ''
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$env:RELEASE_TAG" (Get-ChildItem dist/*.zip).FullName --clobber
