@@ -23,7 +23,7 @@ CMakeLists.txt to "Hyper Hyper Dimension" (the in-plugin title stays the same).
 Retrig ("ZAP!") needs MIDI routed to the plugin: every note-on resets all voices to zero detune.
 
 
-## Interface (v0.7)
+## Interface (v0.8)
 - Window 802 x 192 at 100 % (978 wide with the goniometer open), resizable: drag the bottom right corner
   (fixed aspect ratio, 60-250 %) or pick 75-200 % in the SIZE box. The size is saved with the session.
 - Main row: HYPER! | DIMENSION | SPACEY across the whole width. Each section ends with its amount
