@@ -10,18 +10,22 @@ namespace
     constexpr int   kHyperX = 26,  kHyperW = 396;
     constexpr int   kDimX   = 434, kDimW   = 132;
     constexpr int   kSpX    = 578, kSpW    = 198;   // "Spacey" (the widener)
-    constexpr int   kStripX = 26,  kStripY = 156, kStripW = 493, kStripH = 28;   // output + settings
-    constexpr int   kCorX   = kStripX + kStripW + 10, kCorW = ui::kWidth - 26 - kCorX;   // correlation box
+    // bottom row: three boxes, 4 px apart: output | settings | phase
+    constexpr int   kStripY = 156, kStripH = 28;
+    constexpr int   kOutX = 26,  kOutW = 214;                     // Bypass, Dry/Wet, Bass Mono
+    constexpr int   kSetX = kOutX + kOutW + 4, kSetW = 184;       // oversampling, filter, size
+    constexpr int   kCorX = kSetX + kSetW + 4, kCorW = ui::kWidth - 26 - kCorX;   // correlation, Phase Protect, goniometer
     constexpr int   kScopeX = ui::kWidth - 14, kScopeY = 14, kScopeSize = ui::kHeight - 28;
 
     float hyperSlot (int i) { return (float) kHyperX + kPitch * ((float) i + 0.5f); }
     float dimSlot   (int i) { return (float) kDimX   + kPitch * ((float) i + 0.5f); }
     float spSlot    (int i) { return (float) kSpX    + kPitch * ((float) i + 0.5f); }
 
-    // bottom strip, x positions: Bypass | Dry/Wet, Bass Mono, Phase Protect | oversampling, filter, size
-    constexpr int kSdBypass = kStripX + 9, kSdDryWet = kStripX + 36, kSdBass = kStripX + 118, kSdProtect = kStripX + 206;
-    constexpr int kSdDiv = kStripX + 301;
-    constexpr int kSdOs = kStripX + 313, kSdFilt = kSdOs + 41, kSdSize = kSdFilt + 87;
+    // x positions inside the boxes
+    constexpr int kSdBypass = kOutX + 9, kSdDryWet = kOutX + 36, kSdBass = kOutX + 118;
+    constexpr int kSdOs = kSetX + 8, kSdFilt = kSdOs + 41, kSdSize = kSdFilt + 87;
+    constexpr int kSdMeterW = 220;                                // the correlation meter, from the box's left edge + 7
+    constexpr int kSdProtect = kCorX + 230, kSdProtectW = 84;
 
     constexpr int   kPresetX = 352, kPresetY = 15, kPresetW = 238, kPresetH = 24;   // centred between title and logo
 
@@ -327,15 +331,9 @@ void MainPanel::paint (juce::Graphics& g)
     namesOf (sections[0], { { hyperSlot (0), "Unison" }, { hyperSlot (1), "Retrig" } });
     namesOf (sections[2], { { spSlot (0), "Mode" } });
 
-    // bottom strip: global output and settings
-    ui::drawInsetPanel (g, juce::Rectangle<float> ((float) kStripX, (float) kStripY, (float) kStripW, (float) kStripH));
-    g.setColour (juce::Colours::black);
-    g.drawVerticalLine (kSdDiv, (float) kStripY + 6.0f, (float) (kStripY + kStripH) - 6.0f);
-    g.setColour (juce::Colour (0xff2a2c31));
-    g.drawVerticalLine (kSdDiv + 1, (float) kStripY + 6.0f, (float) (kStripY + kStripH) - 6.0f);
-
-    // correlation box; the goniometer opens to its right
-    ui::drawInsetPanel (g, juce::Rectangle<float> ((float) kCorX, (float) kStripY, (float) kCorW, (float) kStripH));
+    // bottom row: output | settings | phase (the goniometer opens to the right of the phase box)
+    for (auto [x, w] : { std::pair<int, int> { kOutX, kOutW }, { kSetX, kSetW }, { kCorX, kCorW } })
+        ui::drawInsetPanel (g, juce::Rectangle<float> ((float) x, (float) kStripY, (float) w, (float) kStripH));
 
     if (goniometer.isVisible())
     {
@@ -387,12 +385,12 @@ void MainPanel::resized()
     bypass.setBounds   (kSdBypass, scy - 9, 18, 18);
     dryWet.setBounds   (kSdDryWet, kStripY + 1, 78, kStripH - 2);
     bassMono.setBounds (kSdBass,   kStripY + 1, 86, kStripH - 2);
-    phaseProtect.setBounds (kSdProtect, scy - 9, 84, 18);
+    phaseProtect.setBounds (kSdProtect, scy - 9, kSdProtectW, 18);
     osFactor.setBounds (kSdOs,   scy - 8, 38, 17);
     osFilter.setBounds (kSdFilt, scy - 8, 84, 17);
     sizeBox.setBounds  (kSdSize, scy - 8, 42, 17);
 
-    correlation.setBounds (kCorX + 8, kStripY, kCorW - 40, kStripH);
+    correlation.setBounds (kCorX + 7, kStripY, kSdMeterW, kStripH);
     scopeButton.setBounds (kCorX + kCorW - 26, scy - 9, 18, 18);
 
     goniometer.setBounds (juce::Rectangle<int> (kScopeX, kScopeY, kScopeSize, kScopeSize).reduced (6));

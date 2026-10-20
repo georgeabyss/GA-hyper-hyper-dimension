@@ -98,11 +98,11 @@ namespace
             {  44.0f,  6 },   // bypass
             {  74.0f,  7 },   // dry / wet (locked in the screenshot)
             { 156.0f,  8 },   // bass mono
-            { 237.0f,  9 },   // phase protect
-            { 358.0f, 10 },   // oversampling
-            { 422.0f, 11 },   // anti-alias filter
-            { 488.0f, 12 },   // window size
-            { 645.0f, 13 },   // correlation
+            { 271.0f,  9 },   // oversampling
+            { 335.0f, 10 },   // anti-alias filter
+            { 401.0f, 11 },   // window size
+            { 560.0f, 12 },   // correlation
+            { 703.0f, 13 },   // phase protect
             { 759.0f, 14 },   // goniometer
         };
         const float y = (float) h + (float) kCalloutH * 0.5f;

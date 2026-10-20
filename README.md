@@ -97,12 +97,12 @@ position is each mode's default, and the knob briefly holds there as you drag pa
 6. **Bypass**, at equal loudness. Bypass and Dry/Wet at 0 % dim the whole interface.
 7. **Dry/Wet** for the whole effect. Click the name to lock it (padlock, as shown).
 8. **Bass Mono**: mono below this frequency. Click the name to lock it.
-9. **Phase Protect** on / off. The LED flashes orange while it audibly narrows the sound (as in the picture).
-10. **Oversampling.** The tooltip shows the current latency.
-11. **Anti-alias filter**: Linear Phase or Low Latency.
-12. **Window size**, 75–200 %. You can also drag the bottom right corner.
-13. **Correlation meter.** +1 is mono and 0 is very wide. Below 0 (red) means parts of the
+9. **Oversampling.** The tooltip shows the current latency.
+10. **Anti-alias filter**: Linear Phase or Low Latency.
+11. **Window size**, 75–200 %. You can also drag the bottom right corner.
+12. **Correlation meter.** +1 is mono and 0 is very wide. Below 0 (red) means parts of the
     signal cancel in mono.
+13. **Phase Protect** on / off. The LED flashes orange while it audibly narrows the sound.
 14. **Goniometer.** Opens the stereo scope next to the meter:
 
 ![With the goniometer open](docs/goniometer.png)

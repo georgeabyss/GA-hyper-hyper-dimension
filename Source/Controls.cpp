@@ -564,12 +564,15 @@ void SectionLed::paintButton (juce::Graphics& g, bool isOver, bool)
 //==============================================================================
 void LedToggle::paintButton (juce::Graphics& g, bool isOver, bool)
 {
+    // the label, then the LED right after it
     const float cy = (float) getHeight() * 0.5f;
-    ui::drawLed (g, { 5.0f, cy }, getToggleState(), alarm);
+    const auto font = ui::font (6.5f, false, 0.15f);
+    const auto text = getButtonText().toUpperCase();
+    const float textW = juce::GlyphArrangement::getStringWidth (font, text);
     g.setColour (isOver ? juce::Colour (0xffc9cbd1) : ui::labelGrey);
-    g.setFont (ui::font (6.5f, false, 0.15f));
-    g.drawText (getButtonText().toUpperCase(), juce::Rectangle<float> (13.0f, cy - 5.0f, (float) getWidth() - 13.0f, 10.0f),
-                juce::Justification::centredLeft, false);
+    g.setFont (font);
+    g.drawText (text, juce::Rectangle<float> (2.0f, cy - 5.0f, textW + 2.0f, 10.0f), juce::Justification::centredLeft, false);
+    ui::drawLed (g, { 2.0f + textW + 8.0f, cy }, getToggleState(), alarm);
 }
 
 //==============================================================================

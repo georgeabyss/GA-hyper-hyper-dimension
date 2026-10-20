@@ -144,31 +144,31 @@ void PresetBar::paintDisplay (juce::Graphics& g, juce::Rectangle<float> r)
     g.setGradientFill (juce::ColourGradient (juce::Colour (0xff07060a), 0.0f, r.getY(), juce::Colour (0xff120e17), 0.0f, r.getBottom(), false));
     g.fillRect (r);
 
-    // which cells are lit: "NN NAME" from the left, the star in the last slot
+    // which cells are lit: "NN NAME" from the left with the star in the last slot, or the
+    // safety mute warning in the middle of the grid
     std::vector<bool> lit ((size_t) (kCols * kRows), false);
-    auto put = [&lit] (juce::juce_wchar ch, int slot)
+    auto put = [&lit] (juce::juce_wchar ch, int firstCol)
     {
         const auto& rows = glyph (ch);
         for (int row = 0; row < 7; ++row)
             for (int col = 0; col < 5; ++col)
                 if ((rows[(size_t) row] >> (4 - col)) & 1)
-                    lit[(size_t) ((kTextRow + row) * kCols + kTextCol + slot * 6 + col)] = true;
+                    lit[(size_t) ((kTextRow + row) * kCols + firstCol + col)] = true;
     };
     if (muted)
     {
+        const juce::String warning ("! OUTPUT MUTED !");
+        const int firstCol = (kCols - (warning.length() * 6 - 1)) / 2;
         if (blinkOn)
-        {
-            const juce::String warning ("! OUTPUT MUTED !");
             for (int i = 0; i < warning.length(); ++i)
-                put (warning[i], i);
-        }
+                put (warning[i], firstCol + i * 6);
     }
     else
     {
         for (int i = 0; i < text.length() && i < kSlots - 1; ++i)
-            put (text[i], i);
+            put (text[i], kTextCol + i * 6);
         if (modified)
-            put ('*', kSlots - 1);
+            put ('*', kTextCol + (kSlots - 1) * 6);
     }
 
     // the grid, centred in the glass: every cell is a square LED, lit or not

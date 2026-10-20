@@ -121,7 +121,7 @@ private:
     bool lit = true;
 };
 
-// round LED with a label after it; LED and label are one switch (Phase Protect)
+// a label with a round LED after it; label and LED are one switch (Phase Protect)
 class LedToggle : public juce::Button
 {
 public:
