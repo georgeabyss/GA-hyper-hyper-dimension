@@ -7,7 +7,7 @@ endif()
 # Universal build (Apple Silicon + Intel), macOS 11 or newer: GA defaults, before project().
 include(framework/cmake/GaDefaults.cmake)
 
-project(HyperHyperDimension VERSION 0.9.0)
+project(HyperHyperDimension VERSION 0.9.1)
 
 # JUCE and ga_add_plugin(). Point it at your JUCE checkout: cmake -B build -DJUCE_DIR=/path/to/JUCE
 # No post-build copy: /Library/Audio needs admin rights, so ./install.sh (sudo) installs after the build.

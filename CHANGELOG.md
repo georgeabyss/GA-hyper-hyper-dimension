@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.1 (beta)
+
+**Same plug-in, new foundation.** Hyper! Hyper! Dimension now runs on the GA framework, the shared
+base for the next GA plug-ins. Nothing changes for you: every sound and every pixel was checked
+against 0.9.0 and is identical, and your sessions, presets and locks load as before.
+
+- **Windows:** the VST3 (Windows 10 or 11, 64-bit) is on the release page from now on, next to the Mac
+  installer.
+
 ## 0.9.0 (beta)
 
 **Now also for Windows** (VST3, Windows 10 or 11, 64-bit). The Windows build is new: feedback welcome.
