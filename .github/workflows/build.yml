@@ -30,6 +30,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.release.tag_name || inputs.release_tag || github.ref }}
+          submodules: recursive   # framework/ (ga-framework)
 
       - name: Get JUCE (the same version as the Mac builds)
         run: git clone --depth 1 --branch 9.0.4 https://github.com/juce-framework/JUCE.git ../JUCE
@@ -69,6 +70,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Get JUCE and Ninja
         run: |

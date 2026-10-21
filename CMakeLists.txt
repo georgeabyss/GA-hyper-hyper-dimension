@@ -1,74 +1,36 @@
 cmake_minimum_required(VERSION 3.22)
 
-# Universal build: one binary for Apple Silicon and Intel Macs, macOS 11 (Big Sur) or newer.
-# (Set before project(), so it also applies to the JUCE helper builds.)
-set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
-set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0")   # the oldest macOS the current C++ library supports
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/framework/cmake/GaDefaults.cmake)
+    message(FATAL_ERROR "framework/ is empty. Get the GA framework with: git submodule update --init")
+endif()
+
+# Universal build (Apple Silicon + Intel), macOS 11 or newer: GA defaults, before project().
+include(framework/cmake/GaDefaults.cmake)
 
 project(HyperHyperDimension VERSION 0.9.0)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-# Path to your JUCE checkout. Override with: cmake -B build -DJUCE_DIR=/path/to/JUCE
-set(JUCE_DIR "$ENV{HOME}/Downloads/JUCE" CACHE PATH "Path to the JUCE folder")
-
-add_subdirectory(${JUCE_DIR} JUCE)
-
-# NOTE: no post-build copy. /Library/Audio is system-wide and needs admin rights,
-# so installing is done by ./install.sh (uses sudo) after the build.
-juce_add_plugin(HyperDim
-    COMPANY_NAME "GA"
-    BUNDLE_ID com.ga.hyperhyperdimension
-    PLUGIN_MANUFACTURER_CODE Gaau
-    PLUGIN_CODE Hhd1
-    FORMATS VST3 AU
-    PRODUCT_NAME "Hyper! Hyper! Dimension"
-    IS_SYNTH FALSE
-    NEEDS_MIDI_INPUT TRUE
-    NEEDS_MIDI_OUTPUT FALSE
-    IS_MIDI_EFFECT FALSE
-    COPY_PLUGIN_AFTER_BUILD FALSE
-    VST3_COPY_DIR "/Library/Audio/Plug-Ins/VST3"
-    AU_COPY_DIR "/Library/Audio/Plug-Ins/Components"
-    AU_MAIN_TYPE kAudioUnitType_MusicEffect   # aumf: AU hosts only send MIDI (needed for Retrig) to music effects
-    VST3_CATEGORIES Fx)
+# JUCE and ga_add_plugin(). Point it at your JUCE checkout: cmake -B build -DJUCE_DIR=/path/to/JUCE
+# No post-build copy: /Library/Audio needs admin rights, so ./install.sh (sudo) installs after the build.
+include(framework/cmake/GaPlugin.cmake)
 
 file(GLOB SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Source/*.cpp)
-target_sources(HyperDim PRIVATE ${SOURCES})
 
-target_compile_definitions(HyperDim
-    PUBLIC
-        JUCE_WEB_BROWSER=0
-        JUCE_USE_CURL=0
-        JUCE_VST3_CAN_REPLACE_VST2=0)
-
-target_link_libraries(HyperDim
-    PRIVATE
-        juce::juce_audio_processors
-        juce::juce_gui_basics
-        juce::juce_dsp
-    PUBLIC
-        juce::juce_recommended_config_flags
-        juce::juce_recommended_lto_flags)   # link-time optimisation: smaller and faster
-
-# leave out JUCE code the plug-in never calls
-target_link_options(HyperDim INTERFACE $<$<CONFIG:Release>:-Wl,-dead_strip>)
+ga_add_plugin(HyperDim
+    PRODUCT_NAME "Hyper! Hyper! Dimension"
+    PLUGIN_CODE Hhd1
+    BUNDLE_ID com.ga.hyperhyperdimension
+    NEEDS_MIDI_INPUT TRUE
+    AU_MAIN_TYPE kAudioUnitType_MusicEffect   # aumf: AU hosts only send MIDI (needed for Retrig) to music effects
+    SOURCES ${SOURCES})
 
 # Screenshot tool: README images (docs/) and the reference screenshots (tests/reference/screenshots/).
 # Build it in its own folder, so it never ends up in the plug-ins: see tools/make_screenshots.sh
-option(HHD_SCREENSHOTS "Build the tool that renders the README screenshots" OFF)
-if(HHD_SCREENSHOTS)
-    target_sources(HyperDim PRIVATE tools/Screenshots.cpp)
-    add_executable(HyperDimScreenshots tools/ScreenshotsMain.cpp)
-    target_link_libraries(HyperDimScreenshots PRIVATE HyperDim)
-endif()
+ga_add_tool(HyperDim HyperDimScreenshots
+    OPTION HHD_SCREENSHOTS DESCRIPTION "Build the tool that renders the README screenshots"
+    SOURCES tools/Screenshots.cpp MAIN tools/ScreenshotsMain.cpp)
 
 # Null test (refactor safety net): renders fixed test audio through the processor and compares it with
 # tests/reference/. Built in its own folder too: see tools/null_test.sh
-option(HHD_NULLTEST "Build the null test" OFF)
-if(HHD_NULLTEST)
-    target_sources(HyperDim PRIVATE tools/NullTest.cpp)
-    add_executable(HyperDimNullTest tools/NullTestMain.cpp)
-    target_link_libraries(HyperDimNullTest PRIVATE HyperDim)
-endif()
+ga_add_tool(HyperDim HyperDimNullTest
+    OPTION HHD_NULLTEST DESCRIPTION "Build the null test"
+    SOURCES tools/NullTest.cpp MAIN tools/NullTestMain.cpp)

@@ -151,10 +151,13 @@ To uninstall, delete the plug-in files again (on the Mac from `/Library/Audio/Pl
 
 ## For developers
 
-Built with [JUCE](https://juce.com) 9 and CMake. On a Mac, with the Xcode command line tools, Ninja and
-JUCE in `~/Downloads/JUCE` (or pass `-DJUCE_DIR=...`):
+Built with [JUCE](https://juce.com) 9 and CMake, on the shared [GA framework](https://github.com/georgeabyss/ga-framework)
+(a git submodule in `framework/`). On a Mac, with the Xcode command line tools, Ninja and JUCE in
+`~/Downloads/JUCE` (or pass `-DJUCE_DIR=...`):
 
 ```sh
+git clone --recursive https://github.com/georgeabyss/GA-hyper-hyper-dimension.git
+# (already cloned without --recursive? run: git submodule update --init)
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build
 ./install.sh                  # install the plug-ins locally (asks for your password)
 ./make_installer.sh           # dist/HyperHyperDimension-<version>-macOS.zip
