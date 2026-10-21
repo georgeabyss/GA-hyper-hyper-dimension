@@ -1,0 +1,7 @@
+off 0
+2x-linear 49
+2x-lowlatency 4
+4x-linear 61
+4x-lowlatency 6
+8x-linear 65
+8x-lowlatency 6

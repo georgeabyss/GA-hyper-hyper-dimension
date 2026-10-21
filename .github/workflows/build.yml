@@ -58,3 +58,39 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "$env:RELEASE_TAG" (Get-ChildItem dist/*.zip).FullName --clobber
+
+  # Refactor safety net: the null test and the screenshot check, on an Apple Silicon Mac like the one
+  # the references come from. As strict as locally: bit-identical audio, every pixel identical. If
+  # GitHub's Mac differs (another compiler or font rendering), the first run shows by how much; a
+  # tolerance is then set just above that, never wider.
+  checks:
+    if: github.event_name != 'release'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get JUCE and Ninja
+        run: |
+          git clone --depth 1 --branch 9.0.4 https://github.com/juce-framework/JUCE.git ../JUCE
+          brew install ninja
+
+      - name: Build the test tools
+        run: |
+          cmake -B build-tools -G Ninja -DCMAKE_BUILD_TYPE=Release -DJUCE_DIR="$GITHUB_WORKSPACE/../JUCE" -DHHD_NULLTEST=ON -DHHD_SCREENSHOTS=ON
+          cmake --build build-tools --target HyperDimNullTest HyperDimScreenshots
+
+      - name: Null test
+        run: build-tools/HyperDimNullTest check tests/reference
+
+      - name: Screenshot check
+        if: success() || failure()
+        run: build-tools/HyperDimScreenshots check tests/reference/screenshots --pixel-tolerance 0
+
+      - name: Keep what differs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-results
+          path: |
+            build-tools/nulltest-out/
+            build-tools/screenshot-diff/

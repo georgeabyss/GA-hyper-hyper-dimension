@@ -161,6 +161,13 @@ cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build
 ./tools/make_screenshots.sh   # re-render the images in docs/ from the real interface
 ```
 
+Before and after any refactor, two checks make sure nothing changed (both also run on GitHub):
+
+```sh
+./tools/null_test.sh                  # renders test audio, compares with tests/reference/audio (bit-identical)
+./tools/make_screenshots.sh check     # compares the interface with tests/reference/screenshots
+```
+
 The Windows build runs on GitHub Actions (`.github/workflows/build.yml`) and is attached to every
 published release automatically; for an existing release, run the workflow by hand with its tag.
 The version number lives in `CMakeLists.txt`.

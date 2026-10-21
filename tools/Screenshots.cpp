@@ -1,5 +1,11 @@
-// Renders the plug-in's own interface into the PNGs used by the README (docs/).
-// Only built with -DHHD_SCREENSHOTS=ON, in its own build folder (see tools/make_screenshots.sh).
+// Renders the plug-in's own interface into PNGs. Only built with -DHHD_SCREENSHOTS=ON, in its own
+// build folder (see tools/make_screenshots.sh), never into the plug-ins.
+//
+//   HyperDimScreenshots [docs]          README images (with audio playing, so the meters move)
+//   HyperDimScreenshots baseline <dir>  deterministic reference images: no audio, no clock
+//   HyperDimScreenshots check <dir> [--pixel-tolerance N]
+//                                       compares with the baseline: no pixel may differ by more than N in
+//                                       any channel (default 0); differences go to build-tools/screenshot-diff/
 
 #include "../Source/PluginProcessor.h"
 #include "../Source/ParamIDs.h"
@@ -125,11 +131,147 @@ namespace
     }
 }
 
+//==============================================================================
+// Baseline: the same images on every run. Nothing plays, and the editor is only settled through
+// its timer, so the meters stay idle and nothing depends on the time of day.
+namespace
+{
+    struct BaselineShot
+    {
+        juce::String name;
+        float scale;
+        bool scopeOpen;
+        std::function<void (HyperDimAudioProcessor&)> setup;
+    };
+
+    std::vector<BaselineShot> baselineShots()
+    {
+        std::vector<BaselineShot> shots;
+        for (bool open : { false, true })
+            for (float scale : { 0.75f, 1.0f, 1.5f, 2.0f })
+                shots.push_back ({ juce::String (open ? "scope-open" : "main") + "_" + juce::String (juce::roundToInt (scale * 100)),
+                                   scale, open, nullptr });
+        shots.push_back ({ "state_bypassed_100", 1.0f, false, [] (HyperDimAudioProcessor& p)
+        {
+            p.apvts.getParameter (pid::bypass)->setValueNotifyingHost (1.0f);
+        } });
+        shots.push_back ({ "state_dimension-off_drywet-locked_100", 1.0f, false, [] (HyperDimAudioProcessor& p)
+        {
+            p.apvts.getParameter (pid::dimOn)->setValueNotifyingHost (0.0f);
+            p.presets.setLocked (pid::dryWet, true);
+        } });
+        return shots;
+    }
+
+    juce::Image renderBaseline (const BaselineShot& shot)
+    {
+        HyperDimAudioProcessor proc;
+        proc.setPlayConfigDetails (2, 2, 48000.0, 512);
+        proc.prepareToPlay (48000.0, 512);
+        proc.presets.load (presetIndex (proc.presets, "Init"));
+        proc.apvts.state.setProperty (prop::scopeOpen, shot.scopeOpen, nullptr);
+        proc.apvts.state.setProperty (prop::uiScale, shot.scale, nullptr);
+        if (shot.setup != nullptr)
+            shot.setup (proc);
+
+        std::unique_ptr<juce::AudioProcessorEditor> editor (proc.createEditor());
+        for (int i = 0; i < 4; ++i)   // let the editor's timer apply the state once
+        {
+            juce::Thread::sleep (20);
+            juce::Timer::callPendingTimersSynchronously();
+        }
+        auto image = editor->createComponentSnapshot (editor->getLocalBounds(), true, 1.0f);
+        editor.reset();
+        proc.releaseResources();
+        return image;
+    }
+
+    // number of pixels whose largest channel difference is above the tolerance; largest = the
+    // largest channel difference anywhere (what a tolerance would have to cover)
+    int countDifferences (const juce::Image& a, const juce::Image& b, int tolerance, juce::Image& diff, int& largest)
+    {
+        diff = juce::Image (juce::Image::ARGB, a.getWidth(), a.getHeight(), true);
+        int count = 0;
+        largest = 0;
+        for (int y = 0; y < a.getHeight(); ++y)
+            for (int x = 0; x < a.getWidth(); ++x)
+            {
+                const auto p = a.getPixelAt (x, y), q = b.getPixelAt (x, y);
+                const int d = juce::jmax (std::abs (p.getRed() - q.getRed()), std::abs (p.getGreen() - q.getGreen()),
+                                          std::abs (p.getBlue() - q.getBlue()), std::abs (p.getAlpha() - q.getAlpha()));
+                largest = juce::jmax (largest, d);
+                const bool different = d > tolerance;
+                count += different ? 1 : 0;
+                diff.setPixelAt (x, y, different ? juce::Colours::red : p.withAlpha (0.25f));
+            }
+        return count;
+    }
+
+    int baseline (bool write, const juce::File& dir, int tolerance)
+    {
+        const auto diffDir = juce::File::getCurrentWorkingDirectory().getChildFile ("build-tools/screenshot-diff");
+        int failures = 0;
+        for (auto& shot : baselineShots())
+        {
+            const auto rendered = renderBaseline (shot);
+            const auto file = dir.getChildFile (shot.name + ".png");
+            if (write)
+            {
+                dir.createDirectory();
+                save (rendered, file);
+                continue;
+            }
+            const auto ref = juce::ImageFileFormat::loadFrom (file);
+            // compare after the same PNG round trip the reference went through (semi-transparent
+            // edge pixels are rounded on the way), so only real differences count
+            juce::MemoryOutputStream png;
+            juce::PNGImageFormat().writeImageToStream (rendered, png);
+            const auto image = juce::ImageFileFormat::loadFrom (png.getData(), png.getDataSize());
+            if (! ref.isValid() || ref.getWidth() != image.getWidth() || ref.getHeight() != image.getHeight())
+            {
+                std::printf ("FAIL  %-40s reference missing or of a different size\n", shot.name.toRawUTF8());
+                ++failures;
+                continue;
+            }
+            juce::Image diff;
+            int largest = 0;
+            const int count = countDifferences (ref, image, tolerance, diff, largest);
+            const bool ok = count == 0;
+            const auto detail = largest == 0 ? juce::String ("identical")
+                              : ok ? "within tolerance (largest channel difference " + juce::String (largest) + ")"
+                                   : juce::String (count) + " pixels above tolerance " + juce::String (tolerance)
+                                     + " (largest channel difference " + juce::String (largest) + ")";
+            std::printf ("%s  %-40s %s\n", ok ? "ok  " : "FAIL", shot.name.toRawUTF8(), detail.toRawUTF8());
+            if (count > 0)
+            {
+                diffDir.createDirectory();
+                save (image, diffDir.getChildFile (shot.name + "_new.png"));
+                save (diff, diffDir.getChildFile (shot.name + "_diff.png"));
+            }
+            failures += ok ? 0 : 1;
+        }
+        std::printf ("\n%s\n", failures == 0 ? (write ? "Baseline written." : "All screenshots match.")
+                                             : "Screenshots differ: see build-tools/screenshot-diff/");
+        return failures == 0 ? 0 : 1;
+    }
+}
+
 // called from tools/ScreenshotsMain.cpp
-int hhdRenderScreenshots (const char* outputFolder)
+int hhdRenderScreenshots (int argc, char** argv)
 {
     juce::ScopedJuceInitialiser_GUI gui;
-    const juce::File out (juce::File::getCurrentWorkingDirectory().getChildFile (outputFolder));
+    const juce::String mode (argc > 1 ? argv[1] : "docs");
+    if (mode == "baseline" || mode == "check")
+    {
+        int tolerance = 0;
+        for (int i = 3; i + 1 < argc; ++i)
+            if (juce::String (argv[i]) == "--pixel-tolerance")
+                tolerance = juce::String (argv[i + 1]).getIntValue();
+        const juce::File dir (juce::File::getCurrentWorkingDirectory().getChildFile (argc > 2 ? argv[2] : "tests/reference/screenshots"));
+        return baseline (mode == "baseline", dir, tolerance);
+    }
+
+    const juce::File out (juce::File::getCurrentWorkingDirectory().getChildFile (mode));
     out.createDirectory();
 
     HyperDimAudioProcessor proc;

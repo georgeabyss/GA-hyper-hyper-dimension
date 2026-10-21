@@ -55,11 +55,20 @@ target_link_libraries(HyperDim
 # leave out JUCE code the plug-in never calls
 target_link_options(HyperDim INTERFACE $<$<CONFIG:Release>:-Wl,-dead_strip>)
 
-# Screenshot tool for the README (renders the real interface into docs/*.png).
+# Screenshot tool: README images (docs/) and the reference screenshots (tests/reference/screenshots/).
 # Build it in its own folder, so it never ends up in the plug-ins: see tools/make_screenshots.sh
 option(HHD_SCREENSHOTS "Build the tool that renders the README screenshots" OFF)
 if(HHD_SCREENSHOTS)
     target_sources(HyperDim PRIVATE tools/Screenshots.cpp)
     add_executable(HyperDimScreenshots tools/ScreenshotsMain.cpp)
     target_link_libraries(HyperDimScreenshots PRIVATE HyperDim)
+endif()
+
+# Null test (refactor safety net): renders fixed test audio through the processor and compares it with
+# tests/reference/. Built in its own folder too: see tools/null_test.sh
+option(HHD_NULLTEST "Build the null test" OFF)
+if(HHD_NULLTEST)
+    target_sources(HyperDim PRIVATE tools/NullTest.cpp)
+    add_executable(HyperDimNullTest tools/NullTestMain.cpp)
+    target_link_libraries(HyperDimNullTest PRIVATE HyperDim)
 endif()

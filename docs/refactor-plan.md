@@ -51,8 +51,16 @@ Stays in each plugin: the engine, the main panel, the parameter layout of its ow
 4. **Bottom strip and editor shell.** Extract `ga::BottomStrip` and `ga::EditorShell` from MainPanel and PluginEditor. Check: screenshots identical at 75–200 %, goniometer open and closed.
 5. **Presets.** Generalise PresetManager and PresetBar with the config struct. Check: factory and user presets load, locks persist, modified star appears.
 6. **DSP blocks.** Move DspBlocks to `ga::dsp`. Check: null test bit-identical.
-7. **Output stage.** Move dry/wet, Bass Mono, Phase Protect and loudness matching out of `hd::Engine` into `ga::OutputStage`. Check: null test below −120 dB (floating-point order may differ), Phase Protect LED still flashes.
+7. **Output stage.** Move dry/wet, Bass Mono, Phase Protect and loudness matching out of `hd::Engine` into `ga::OutputStage`. Check: null test within a tolerance set just above the measured difference (floating-point order may differ; see "Tolerances" below), Phase Protect LED still flashes.
 8. **Processor shell.** Move oversampling, bypass, safety mute, scope and state into `ga::ProcessorBase`. Check: null test, latency reported unchanged, safety mute and resume work, old sessions open with all values.
+
+### Tolerances
+
+A fixed −120 dB is not good enough: in the Phase 1 test, multiplying the output by 1.000001 gave
+differences of −116.9 to −120.4 dB, so three renders passed at −120 dB. When a phase cannot stay
+bit-identical (Phase 7), measure the actual difference first and set the tolerance just above it,
+never wider. The same goes for CI: it starts as strict as the local check (bit-identical audio,
+`--pixel-tolerance 0`), and a tolerance is only added just above what the first run measures.
 
 Then release Hyper! Hyper! Dimension 0.9.1 (Mac and Windows) from the framework, and only then create the Fase Phucker repo with the framework submodule.
 
