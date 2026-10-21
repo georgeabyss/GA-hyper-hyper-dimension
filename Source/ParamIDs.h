@@ -1,5 +1,7 @@
 #pragma once
 
+#include "plugin/SharedIds.h"
+
 // Parameter IDs, shared by the processor and the editor.
 // Never change them: hosts and saved sessions refer to parameters by these strings.
 namespace pid
@@ -24,20 +26,20 @@ namespace pid
     inline constexpr const char* spaceySpacing = "widespace";
     inline constexpr const char* spaceyAmount  = "wideamt";
 
-    // output and settings
-    inline constexpr const char* dryWet     = "mix";
-    inline constexpr const char* bassMono   = "bassmono";
-    inline constexpr const char* bypass     = "bypass";
-    inline constexpr const char* osFactor   = "os";
-    inline constexpr const char* osFilter   = "osfilter";
-    inline constexpr const char* phaseProtect = "phaseguard";   // was called Phase Guard
+    // output and settings: shared by all GA plug-ins (framework/plugin/SharedIds.h)
+    inline constexpr const char* dryWet       = ga::pid::dryWet;         // "mix"
+    inline constexpr const char* bassMono     = ga::pid::bassMono;       // "bassmono"
+    inline constexpr const char* bypass       = ga::pid::bypass;         // "bypass"
+    inline constexpr const char* osFactor     = ga::pid::osFactor;       // "os"
+    inline constexpr const char* osFilter     = ga::pid::osFilter;       // "osfilter"
+    inline constexpr const char* phaseProtect = ga::pid::phaseProtect;   // "phaseguard"
 }
 
 // Settings that are not parameters, saved as properties of the state tree
 namespace prop
 {
-    inline constexpr const char* scopeOpen = "scopeOpen";
-    inline constexpr const char* uiScale   = "uiScale";
+    inline constexpr const char* scopeOpen = ga::prop::scopeOpen;   // "scopeOpen", used by the editor shell
+    inline constexpr const char* uiScale   = ga::prop::uiScale;     // "uiScale"
     inline constexpr const char* preset    = "preset";       // name of the current preset
     inline constexpr const char* presetIsUser = "presetUser"; // ... and whether it is a user preset
     inline constexpr const char* lockDryWet   = "lockDryWet";   // locked values stay when a preset loads

@@ -181,7 +181,7 @@ The version number lives in `CMakeLists.txt`.
 | `PluginProcessor.*`, `ParamIDs.h` | parameters, oversampling, bypass, safety mute |
 | `PresetManager.*` | presets and locks |
 | `MainPanel.*`, `PresetBar.*`, `PluginEditor.*` | the interface |
-| `framework/ui/` | look, knobs, buttons, meters, title and logo, shared by all GA plug-ins |
+| `framework/ui/` | shared by all GA plug-ins: editor shell (scaling, goniometer), bottom strip, look, knobs, buttons, meters, title and logo |
 
 ---
 
