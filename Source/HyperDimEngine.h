@@ -20,9 +20,8 @@
 //             FREQ SHIFT   +/- 2.2 Hz single-sideband shift per channel (binaural beat)
 //             PRISM        8-band mid signal, every band auto-pans on its own LFO
 //             LO-FI TWINS  different bit depth + sample rate per channel
-//  OUTPUT     Global dry/wet, global bass mono, Phase Protect (keeps the correlation the
-//             effect causes above +0.2), then a loudness match (K-weighted, ITU-R BS.1770)
-//             that keeps the output as loud as the input.
+//  OUTPUT     ga::dsp::OutputStage (framework): global dry/wet, global bass mono,
+//             Phase Protect, then a loudness match that keeps the output as loud as the input.
 //
 //  With every section off the output is the input, sample for sample.
 //  The engine can run oversampled (the host side up/downsamples); pass the factor
@@ -32,6 +31,7 @@
 #include <array>
 #include <atomic>
 #include "dsp/DspBlocks.h"
+#include "dsp/OutputStage.h"
 
 namespace hd
 {
@@ -61,7 +61,7 @@ public:
     };
 
     std::atomic<float> vizCents[kMaxVoices];
-    std::atomic<float> protectActivity { 0.0f };   // how far Phase Protect is pulling back right now, 0..1
+    ga::dsp::OutputStage output;   // dry/wet, bass mono, Phase Protect, loudness match; read protectActivity here
 
     Engine() { for (auto& a : vizCents) a.store (0.0f); }
 
@@ -75,7 +75,11 @@ public:
     // so there is no click, only a short pitch glide.
     void retrig();
 
-    void setParams (const Params& p) { prm = p; }
+    void setParams (const Params& p)
+    {
+        prm = p;
+        output.setParams ({ p.globalMix, p.bassMonoHz, p.phaseProtect });
+    }
     void process (float* const* io, int n);
 
 private:
@@ -86,7 +90,6 @@ private:
         double amp[kMaxVoices], inc[kMaxVoices], omega[kMaxVoices], gainL[kMaxVoices], gainR[kMaxVoices];
         float wetScale = 0.0f;
         double dimBase1 = 0.0, dimBase2 = 0.0, dimDepth = 0.0, dimInc = 0.0;
-        bool bassMono = false;
     };
     Block prepareBlock();
 
@@ -94,10 +97,6 @@ private:
     void hyper (float l, float r, float& outL, float& outR, const Block&);
     void dimension (float& outL, float& outR, const Block&);
     void spacey (float& outL, float& outR);
-    void dryWet (float l, float r, float& outL, float& outR);
-    void bassMono (float& outL, float& outR);
-    void phaseProtect (float l, float r, float& outL, float& outR);
-    void loudnessMatch (float l, float r, float& outL, float& outR);
     void updateViz (const Block&);
 
     // Spacey modes: (L, R) in, (oL, oR) out
@@ -116,7 +115,6 @@ private:
     static constexpr double twoPi = 6.283185307179586;
     static constexpr double baseTau = 0.001;
     static constexpr int kSmearTable = 256;
-    static constexpr double kGuardFloor = 0.2;   // lowest correlation Phase Protect lets the effect cause
 
     Params prm;
     double sr = 44100.0;
@@ -124,7 +122,7 @@ private:
 
     // smoothing
     double mixCoef = 0.01, spaceCoef = 0.001;
-    double hmS = 0.5, dmS = 0.3, wideS = 0.0, amtS = 1.0, spcS = 0.5, gmS = 1.0;
+    double hmS = 0.5, dmS = 0.3, wideS = 0.0, amtS = 1.0, spcS = 0.5;
 
     // hyper
     ga::dsp::DelayLine line[2];
@@ -149,15 +147,6 @@ private:
     double prismPhase[8] {}, prismInc[8] {};
     double crushAccL = 1.0, crushAccR = 1.0, crushRatioL = 0.3, crushRatioR = 0.2;
     float crushHoldL = 0.0f, crushHoldR = 0.0f;
-
-    // output
-    ga::dsp::Crossover bmL, bmR;
-    double bmFreq = -1.0;
-    double guardPowCoef = 0.0001, guardDown = 0.001, guardUp = 0.0001;
-    double guardInM = 0.0, guardInS = 0.0, guardDM = 0.0, guardDS = 0.0, guardCrossM = 0.0, guardCrossS = 0.0;
-    double sideGain = 1.0, midGain = 1.0;   // how much of the effect's side / mid change is kept
-    ga::dsp::Biquad kwIn[2][2], kwOut[2][2];   // K-weighting for the loudness match, [channel][stage]
-    double powCoef = 0.0001, gainCoef = 0.001, attackCoef = 0.01, powIn = 0.0, powOut = 0.0, normGain = 1.0;
 };
 
 } // namespace hd

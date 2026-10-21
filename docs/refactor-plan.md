@@ -67,6 +67,10 @@ linear-phase oversampling renders (at most −122.7 dB; the FIR filter sums in a
 CI therefore uses `--tolerance-db -121 --tolerance-match linear`: the other renders stay bit-identical,
 and the ×1.000001 test still fails every render.
 
+Phase 7 result: the output stage kept the exact per-sample arithmetic, and the null test stayed
+bit-identical (25/25), so no tolerance was needed. Phase Protect activity per factory preset was
+also identical, block for block.
+
 Then release Hyper! Hyper! Dimension 0.9.1 (Mac and Windows) from the framework, and only then create the Fase Phucker repo with the framework submodule.
 
 ## Additions for Fase Phucker
