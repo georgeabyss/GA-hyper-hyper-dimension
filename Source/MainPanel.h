@@ -2,7 +2,7 @@
 
 #include "PluginProcessor.h"
 #include "ui/Controls.h"
-#include "PresetBar.h"
+#include "presets/PresetBar.h"
 
 // Title, preset bar and the three sections, at 100 %. It sits on the GA editor shell's faceplate,
 // which adds the bottom strip, the goniometer and the scaling.
@@ -36,7 +36,7 @@ private:
 
     HyperDimAudioProcessor& proc;
 
-    PresetBar presetBar;   // in the title bar, between the name and the GA logo
+    ga::PresetBar presetBar;   // in the title bar, between the name and the GA logo
 
     // HYPER | DIMENSION | SPACEY, each ending with its amount
     ga::StepBox unison;

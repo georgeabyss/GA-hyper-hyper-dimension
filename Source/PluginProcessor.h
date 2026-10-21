@@ -3,7 +3,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
 #include "HyperDimEngine.h"
-#include "PresetManager.h"
+#include "Presets.h"
 
 class HyperDimAudioProcessor : public juce::AudioProcessor
 {
@@ -51,7 +51,7 @@ public:
     void resumeAfterSafetyMute() { resumeRequested = true; }
 
     juce::AudioProcessorValueTreeState apvts;
-    PresetManager presets { apvts };
+    ga::PresetManager presets { apvts, presetConfig (apvts) };
     hd::Engine engine;
 
 private:

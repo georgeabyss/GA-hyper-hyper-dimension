@@ -159,7 +159,7 @@ namespace
         param->setValueNotifyingHost (param->convertTo0to1 (value));
     }
 
-    int presetIndex (const PresetManager& presets, const juce::String& name)
+    int presetIndex (const ga::PresetManager& presets, const juce::String& name)
     {
         for (size_t i = 0; i < presets.all().size(); ++i)
             if (presets.all()[i].isFactory && presets.all()[i].name == name)

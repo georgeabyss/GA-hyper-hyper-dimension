@@ -38,10 +38,11 @@ namespace pid
 // Settings that are not parameters, saved as properties of the state tree
 namespace prop
 {
-    inline constexpr const char* scopeOpen = ga::prop::scopeOpen;   // "scopeOpen", used by the editor shell
-    inline constexpr const char* uiScale   = ga::prop::uiScale;     // "uiScale"
-    inline constexpr const char* preset    = "preset";       // name of the current preset
-    inline constexpr const char* presetIsUser = "presetUser"; // ... and whether it is a user preset
-    inline constexpr const char* lockDryWet   = "lockDryWet";   // locked values stay when a preset loads
-    inline constexpr const char* lockBassMono = "lockBassMono";
+    // shared by all GA plug-ins (framework/plugin/SharedIds.h)
+    inline constexpr const char* scopeOpen    = ga::prop::scopeOpen;      // "scopeOpen", editor shell
+    inline constexpr const char* uiScale      = ga::prop::uiScale;        // "uiScale"
+    inline constexpr const char* preset       = ga::prop::preset;         // "preset", preset manager
+    inline constexpr const char* presetIsUser = ga::prop::presetIsUser;   // "presetUser"
+    inline constexpr const char* lockDryWet   = ga::prop::lockDryWet;     // "lockDryWet"
+    inline constexpr const char* lockBassMono = ga::prop::lockBassMono;   // "lockBassMono"
 }
