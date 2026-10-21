@@ -279,7 +279,7 @@ void Engine::phaseProtect (float l, float r, float& outL, float& outR)
 // the ear hears them.
 void Engine::loudnessMatch (float l, float r, float& outL, float& outR)
 {
-    auto kWeight = [] (Biquad* f, float x) { return (double) f[1].process (f[0].process (x)); };
+    auto kWeight = [] (ga::dsp::Biquad* f, float x) { return (double) f[1].process (f[0].process (x)); };
     const float monoR = nCh > 1 ? outR : outL;   // mono: only the left channel is output
     const double kil = kWeight (kwIn[0], l), kir = kWeight (kwIn[1], r);
     const double kol = kWeight (kwOut[0], outL), kor = kWeight (kwOut[1], monoR);

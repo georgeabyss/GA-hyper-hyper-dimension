@@ -177,7 +177,7 @@ The version number lives in `CMakeLists.txt`.
 
 | Source | |
 |---|---|
-| `HyperDimEngine.*`, `DspBlocks.h` | the sound, independent of JUCE |
+| `HyperDimEngine.*` | the sound, independent of JUCE (filters and delay lines from `framework/dsp/`) |
 | `PluginProcessor.*`, `ParamIDs.h` | parameters, oversampling, bypass, safety mute |
 | `Presets.*` | factory presets, what a preset stores, the preset folder |
 | `MainPanel.*`, `PluginEditor.*` | the interface |

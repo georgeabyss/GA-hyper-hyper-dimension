@@ -31,7 +31,7 @@
 
 #include <array>
 #include <atomic>
-#include "DspBlocks.h"
+#include "dsp/DspBlocks.h"
 
 namespace hd
 {
@@ -127,36 +127,36 @@ private:
     double hmS = 0.5, dmS = 0.3, wideS = 0.0, amtS = 1.0, spcS = 0.5, gmS = 1.0;
 
     // hyper
-    DelayLine line[2];
+    ga::dsp::DelayLine line[2];
     double tauCoef = 0.1, offDecay = 0.9999;
     std::array<double, kMaxVoices> theta {}, tau {}, tauOff {}, lastTarget {};
 
     // dimension
-    DelayLine dimLine;
+    ga::dsp::DelayLine dimLine;
     double dimPhase = 0.0;
 
     // spacey
     int wideActive = 0;
-    DelayLine wideLine;
-    Crossover xoL, xoR;
-    Biquad dcFold, combHp;
+    ga::dsp::DelayLine wideLine;
+    ga::dsp::Crossover xoL, xoR;
+    ga::dsp::Biquad dcFold, combHp;
     double driveEnv = 0.05, driveCoef = 0.0002;
     std::array<float, kSmearTable> smearTable {};
-    Allpass1 smearL[4], smearR[4];
+    ga::dsp::Allpass1 smearL[4], smearR[4];
     double smearPhase = 0.0, fsPhase = 0.0;
-    Hilbert hilL, hilR;
-    Crossover prismXo[7];
+    ga::dsp::Hilbert hilL, hilR;
+    ga::dsp::Crossover prismXo[7];
     double prismPhase[8] {}, prismInc[8] {};
     double crushAccL = 1.0, crushAccR = 1.0, crushRatioL = 0.3, crushRatioR = 0.2;
     float crushHoldL = 0.0f, crushHoldR = 0.0f;
 
     // output
-    Crossover bmL, bmR;
+    ga::dsp::Crossover bmL, bmR;
     double bmFreq = -1.0;
     double guardPowCoef = 0.0001, guardDown = 0.001, guardUp = 0.0001;
     double guardInM = 0.0, guardInS = 0.0, guardDM = 0.0, guardDS = 0.0, guardCrossM = 0.0, guardCrossS = 0.0;
     double sideGain = 1.0, midGain = 1.0;   // how much of the effect's side / mid change is kept
-    Biquad kwIn[2][2], kwOut[2][2];   // K-weighting for the loudness match, [channel][stage]
+    ga::dsp::Biquad kwIn[2][2], kwOut[2][2];   // K-weighting for the loudness match, [channel][stage]
     double powCoef = 0.0001, gainCoef = 0.001, attackCoef = 0.01, powIn = 0.0, powOut = 0.0, normGain = 1.0;
 };
 
