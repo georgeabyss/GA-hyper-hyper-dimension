@@ -8,12 +8,12 @@ HyperDimAudioProcessorEditor::HyperDimAudioProcessorEditor (HyperDimAudioProcess
     setLookAndFeel (&laf);
     addAndMakeVisible (panel);
 
-    panel.getScale = [this] { return (float) getHeight() / (float) ui::kHeight; };
+    panel.getScale = [this] { return (float) getHeight() / (float) MainPanel::kBaseHeight; };
     panel.setScale = [this] (float s) { applyScale (s); };
     panel.onLayoutChange = [this]
     {
         updateConstraints();
-        applyScale ((float) getHeight() / (float) ui::kHeight);
+        applyScale ((float) getHeight() / (float) MainPanel::kBaseHeight);
     };
 
     setConstrainer (&constrainer);
@@ -29,7 +29,7 @@ HyperDimAudioProcessorEditor::~HyperDimAudioProcessorEditor()
 
 void HyperDimAudioProcessorEditor::updateConstraints()
 {
-    const double w = (double) panel.baseWidth(), h = (double) ui::kHeight;
+    const double w = (double) panel.baseWidth(), h = (double) MainPanel::kBaseHeight;
     constrainer.setFixedAspectRatio (w / h);
     constrainer.setSizeLimits (juce::roundToInt (w * 0.6), juce::roundToInt (h * 0.6),
                                juce::roundToInt (w * 2.5), juce::roundToInt (h * 2.5));
@@ -38,15 +38,15 @@ void HyperDimAudioProcessorEditor::updateConstraints()
 void HyperDimAudioProcessorEditor::applyScale (float scale)
 {
     scale = juce::jlimit (0.6f, 2.5f, scale);
-    setSize (juce::roundToInt ((float) panel.baseWidth() * scale), juce::roundToInt ((float) ui::kHeight * scale));
+    setSize (juce::roundToInt ((float) panel.baseWidth() * scale), juce::roundToInt ((float) MainPanel::kBaseHeight * scale));
 }
 
 void HyperDimAudioProcessorEditor::resized()
 {
     // the faceplate is laid out at 100 % and scaled as a whole
-    const float scale = (float) getHeight() / (float) ui::kHeight;
+    const float scale = (float) getHeight() / (float) MainPanel::kBaseHeight;
     panel.setTransform (juce::AffineTransform::scale (scale));
-    panel.setBounds (0, 0, panel.baseWidth(), ui::kHeight);
+    panel.setBounds (0, 0, panel.baseWidth(), MainPanel::kBaseHeight);
     proc.apvts.state.setProperty (prop::uiScale, scale, nullptr);
     panel.repaint();
 }

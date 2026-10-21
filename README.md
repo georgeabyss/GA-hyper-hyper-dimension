@@ -180,7 +180,8 @@ The version number lives in `CMakeLists.txt`.
 | `HyperDimEngine.*`, `DspBlocks.h` | the sound, independent of JUCE |
 | `PluginProcessor.*`, `ParamIDs.h` | parameters, oversampling, bypass, safety mute |
 | `PresetManager.*` | presets and locks |
-| `MainPanel.*`, `PresetBar.*`, `Controls.*`, `Meters.*`, `UiStyle.*`, `PluginEditor.*` | the interface |
+| `MainPanel.*`, `PresetBar.*`, `PluginEditor.*` | the interface |
+| `framework/ui/` | look, knobs, buttons, meters, title and logo, shared by all GA plug-ins |
 
 ---
 

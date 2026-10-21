@@ -9,7 +9,7 @@
 
 #include "../Source/PluginProcessor.h"
 #include "../Source/ParamIDs.h"
-#include "../Source/UiStyle.h"
+#include "ui/Style.h"
 #include <random>
 
 namespace
@@ -70,10 +70,10 @@ namespace
     {
         g.setColour (juce::Colours::black.withAlpha (0.5f));
         g.fillEllipse (c.x - 7.5f, c.y - 6.5f, 15.0f, 15.0f);
-        g.setColour (ui::purple);
+        g.setColour (ga::ui::purple);
         g.fillEllipse (c.x - 7.0f, c.y - 7.0f, 14.0f, 14.0f);
         g.setColour (juce::Colour (0xff141518));
-        g.setFont (ui::font (8.5f, true));
+        g.setFont (ga::ui::font (8.5f, true));
         g.drawText (juce::String (number), juce::Rectangle<float> (14.0f, 14.0f).withCentre (c), juce::Justification::centred, false);
     }
 
@@ -114,7 +114,7 @@ namespace
         const float y = (float) h + (float) kCalloutH * 0.5f;
         for (auto& b : below)
         {
-            g.setColour (ui::purple.withAlpha (0.6f));
+            g.setColour (ga::ui::purple.withAlpha (0.6f));
             g.drawLine (b.first, 184.0f, b.first, y - 7.0f, 1.0f);
             badge (g, { b.first, y }, b.second);
         }

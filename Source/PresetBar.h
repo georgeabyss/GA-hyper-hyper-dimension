@@ -1,7 +1,7 @@
 #pragma once
 
 #include "PresetManager.h"
-#include "UiStyle.h"
+#include "ui/Style.h"
 
 // Preset browser in the title bar: previous button, a dot-matrix display, next button.
 // The display is one grid of square LEDs; the text is made by lighting cells of that grid
@@ -38,5 +38,5 @@ private:
     juce::String text;          // what the display shows, e.g. "07 TWIN PEAKS"
     bool modified = false, menuOpen = false, muted = false, blinkOn = true;
     Zone hover = Zone::none;
-    juce::SharedResourcePointer<HyperLookAndFeel> dialogLook;   // outlives any dialog that is still open
+    juce::SharedResourcePointer<ga::LookAndFeel> dialogLook;   // outlives any dialog that is still open
 };

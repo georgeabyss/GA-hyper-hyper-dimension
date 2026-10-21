@@ -18,7 +18,7 @@ private:
     void applyScale (float scale);
 
     HyperDimAudioProcessor& proc;
-    HyperLookAndFeel laf;
+    ga::LookAndFeel laf;
     MainPanel panel;
     juce::ComponentBoundsConstrainer constrainer;
     juce::TooltipWindow tooltips { this, 900 };

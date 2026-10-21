@@ -1,14 +1,17 @@
 #pragma once
 
 #include "PluginProcessor.h"
-#include "Controls.h"
-#include "Meters.h"
+#include "ui/Controls.h"
+#include "ui/Meters.h"
 #include "PresetBar.h"
 
 // The whole faceplate at 100 %. The editor scales it for the window size.
 class MainPanel : public juce::Component, private juce::Timer
 {
 public:
+    static constexpr int kBaseWidth = 802, kBaseHeight = 192;   // size at 100 %
+    static constexpr int kScopeExtra = 176;                     // added to the width while the goniometer is open
+
     explicit MainPanel (HyperDimAudioProcessor&);
     ~MainPanel() override;
 
@@ -16,7 +19,7 @@ public:
     void resized() override;
 
     bool isScopeOpen() const { return goniometer.isVisible(); }
-    int baseWidth() const { return ui::kWidth + (isScopeOpen() ? ui::kScopeExtra : 0); }
+    int baseWidth() const { return kBaseWidth + (isScopeOpen() ? kScopeExtra : 0); }
 
     std::function<void()> onLayoutChange;        // the goniometer opened / closed
     std::function<float()> getScale;             // current window scale, 1 = 100 %
@@ -31,7 +34,7 @@ private:
         int x, w;
         const char* onId;
         const char* amountId;
-        SectionLed* led;
+        ga::SectionLed* led;
         std::vector<juce::Component*> controls;
         bool on = true;
     };
@@ -41,33 +44,32 @@ private:
     void updateMeters();                 // correlation and goniometer from the processor's output
     void updateOutputControls();         // Bypass (not clickable at Dry/Wet 0), locks, Phase Protect
     void setScopeOpen (bool open);
-    void paintTitle (juce::Graphics&);
 
     HyperDimAudioProcessor& proc;
 
     PresetBar presetBar;   // in the title bar, between the name and the GA logo
 
     // HYPER | DIMENSION | SPACEY, each ending with its amount
-    StepBox unison;
-    LampButton retrig;
-    Knob rate, detune, spread, hmix;
-    Knob dsize, dmix;
-    StepBox wideMode;
-    Knob wspace, wamt;
-    SectionLed hyperLed, dimLed, spaceyLed;
+    ga::StepBox unison;
+    ga::LampButton retrig;
+    ga::Knob rate, detune, spread, hmix;
+    ga::Knob dsize, dmix;
+    ga::StepBox wideMode;
+    ga::Knob wspace, wamt;
+    ga::SectionLed hyperLed, dimLed, spaceyLed;
     std::array<Section, 3> sections;
 
     // bottom strip: Bypass | Dry/Wet, Bass Mono, Phase Protect | settings
-    SquareToggle bypass { SquareToggle::Icon::power, true };   // lit while the effect is active
-    Knob dryWet, bassMono;
-    LedToggle phaseProtect { "Phase Protect" };
-    StepBox osFactor, osFilter;
-    MenuBox sizeBox;
+    ga::SquareToggle bypass { ga::SquareToggle::Icon::power, true };   // lit while the effect is active
+    ga::Knob dryWet, bassMono;
+    ga::LedToggle phaseProtect { "Phase Protect" };
+    ga::StepBox osFactor, osFilter;
+    ga::MenuBox sizeBox;
 
     // correlation box; the goniometer opens to its right
-    CorrelationMeter correlation;
-    SquareToggle scopeButton { SquareToggle::Icon::scope, false };
-    Goniometer goniometer;
+    ga::CorrelationMeter correlation;
+    ga::SquareToggle scopeButton { ga::SquareToggle::Icon::scope, false };
+    ga::Goniometer goniometer;
 
     std::vector<float> scopeL, scopeR;
     double accLR = 0.0, accLL = 0.0, accRR = 0.0;
@@ -78,7 +80,6 @@ private:
     bool sectionsKnown = false;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> retrigAtt, bypassAtt, protectAtt, ledAtt[3];
-    juce::Path gothicGA;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainPanel)
 };

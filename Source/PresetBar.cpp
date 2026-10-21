@@ -123,18 +123,18 @@ void PresetBar::paint (juce::Graphics& g)
 void PresetBar::paintArrowButton (juce::Graphics& g, Zone z)
 {
     const auto r = zoneRect (z);
-    ui::drawRecess (g, r);
+    ga::ui::drawRecess (g, r);
     if (hover == z)
     {
-        g.setGradientFill (juce::ColourGradient (ui::purple.withAlpha (0.25f), r.getCentreX(), r.getCentreY(),
-                                                 ui::purple.withAlpha (0.0f), r.getCentreX() + r.getWidth() * 0.7f, r.getCentreY(), true));
+        g.setGradientFill (juce::ColourGradient (ga::ui::purple.withAlpha (0.25f), r.getCentreX(), r.getCentreY(),
+                                                 ga::ui::purple.withAlpha (0.0f), r.getCentreX() + r.getWidth() * 0.7f, r.getCentreY(), true));
         g.fillRect (r.reduced (1.0f));
     }
     const auto c = r.getCentre();
     const float d = z == Zone::prev ? -1.0f : 1.0f;   // pointing left or right
     juce::Path tri;
     tri.addTriangle (c.x + 2.0f * d, c.y, c.x - 2.0f * d, c.y - 3.0f, c.x - 2.0f * d, c.y + 3.0f);
-    g.setColour (hover == z ? ui::purpleHi : juce::Colour (0xff9a9da6));
+    g.setColour (hover == z ? ga::ui::purpleHi : juce::Colour (0xff9a9da6));
     g.fillPath (tri);
 }
 
@@ -183,7 +183,7 @@ void PresetBar::paintDisplay (juce::Graphics& g, juce::Rectangle<float> r)
     g.fillPath (off);
 
     // glow: the lit dots blurred outwards in two soft passes, then the dots themselves
-    const auto glow = muted ? juce::Colour (0xffff6e32) : ui::purple;   // safety mute: orange-red
+    const auto glow = muted ? juce::Colour (0xffff6e32) : ga::ui::purple;   // safety mute: orange-red
     for (auto pass : { std::pair<float, float> { 2.6f, 0.10f }, { 1.4f, 0.22f } })
     {
         g.setColour (glow.withAlpha (pass.second));
@@ -196,7 +196,7 @@ void PresetBar::paintDisplay (juce::Graphics& g, juce::Rectangle<float> r)
     g.setGradientFill (juce::ColourGradient (juce::Colours::white.withAlpha (0.05f), 0.0f, r.getY(),
                                              juce::Colours::white.withAlpha (0.0f), 0.0f, r.getCentreY(), false));
     g.fillRect (r.withHeight (r.getHeight() * 0.45f));
-    g.setColour (muted ? juce::Colour (0xffff7832).withAlpha (0.8f) : menuOpen ? ui::purple.withAlpha (0.7f) : juce::Colours::black);
+    g.setColour (muted ? juce::Colour (0xffff7832).withAlpha (0.8f) : menuOpen ? ga::ui::purple.withAlpha (0.7f) : juce::Colours::black);
     g.drawRect (r, 1.0f);
 }
 
