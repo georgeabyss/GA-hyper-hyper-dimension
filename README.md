@@ -178,10 +178,10 @@ The version number lives in `CMakeLists.txt`.
 | Source | |
 |---|---|
 | `HyperDimEngine.*` | the sound, independent of JUCE (filters, delay lines and the output stage from `framework/dsp/`) |
-| `PluginProcessor.*`, `ParamIDs.h` | parameters, oversampling, bypass, safety mute |
+| `PluginProcessor.*`, `ParamIDs.h` | parameters, and the engine plugged into the GA processor base |
 | `Presets.*` | factory presets, what a preset stores, the preset folder |
 | `MainPanel.*`, `PluginEditor.*` | the interface |
-| `framework/` | shared by all GA plug-ins: editor shell (scaling, goniometer), bottom strip, preset manager and browser, look, knobs, buttons, meters, title and logo |
+| `framework/` | shared by all GA plug-ins: processor base (oversampling, bypass, safety mute, state), output stage, DSP blocks, editor shell (scaling, goniometer), bottom strip, preset manager and browser, look, knobs, buttons, meters, title and logo |
 
 ---
 
