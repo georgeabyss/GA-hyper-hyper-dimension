@@ -3,7 +3,9 @@
 // -DHHD_NULLTEST=ON (see tools/null_test.sh), never into the plug-ins.
 //
 //   HyperDimNullTest write <referenceDir>                       writes the references
-//   HyperDimNullTest check <referenceDir> [--tolerance-db <dB>] compares; by default any difference fails
+//   HyperDimNullTest check <referenceDir> [--tolerance-db <dB> [--tolerance-match <text>]]
+//                                             compares; by default any difference fails. With --tolerance-match,
+//                                             the tolerance only applies to renders whose name contains <text>.
 //
 // Checks: 3 presets x 7 oversampling settings, variable block sizes, 96 kHz, automation of Bypass and
 // Dry/Wet, the safety mute, a saved session that must load with identical values, and the latency of
@@ -384,20 +386,29 @@ int hhdNullTest (int argc, char** argv)
     juce::ScopedJuceInitialiser_GUI gui;
     if (argc < 3 || (juce::String (argv[1]) != "write" && juce::String (argv[1]) != "check"))
     {
-        std::printf ("usage: HyperDimNullTest write|check <referenceDir> [--tolerance-db <dB>]\n");
+        std::printf ("usage: HyperDimNullTest write|check <referenceDir> [--tolerance-db <dB> [--tolerance-match <text>]]\n");
         return 2;
     }
     const bool write = juce::String (argv[1]) == "write";
     const juce::File dir = juce::File::getCurrentWorkingDirectory().getChildFile (argv[2]);
     const juce::File audioDir = dir.getChildFile ("audio");
     double toleranceDb = -1000.0;   // default: any difference fails
+    juce::String toleranceMatch;    // empty: the tolerance applies to every render
     for (int i = 3; i + 1 < argc; ++i)
-        if (juce::String (argv[i]) == "--tolerance-db")
-            toleranceDb = juce::String (argv[i + 1]).getDoubleValue();
+    {
+        if (juce::String (argv[i]) == "--tolerance-db")    toleranceDb = juce::String (argv[i + 1]).getDoubleValue();
+        if (juce::String (argv[i]) == "--tolerance-match") toleranceMatch = argv[i + 1];
+    }
     const juce::File outDir = juce::File::getCurrentWorkingDirectory().getChildFile ("build-tools/nulltest-out");
 
     int failures = 0;
-    std::printf ("%s %s\n\n", write ? "Writing references to" : "Checking against", dir.getFullPathName().toRawUTF8());
+    std::printf ("%s %s\n", write ? "Writing references to" : "Checking against", dir.getFullPathName().toRawUTF8());
+    if (! write)
+        std::printf (toleranceDb <= -1000.0 ? "Every render must be identical.\n"
+                     : toleranceMatch.isEmpty() ? "Tolerance %.1f dB for every render.\n"
+                     : "Tolerance %.1f dB for renders containing '%s'; all others must be identical.\n",
+                     toleranceDb, toleranceMatch.toRawUTF8());
+    std::printf ("\n");
 
     for (auto& spec : allRenders())
     {
@@ -435,7 +446,8 @@ int hhdNullTest (int argc, char** argv)
         for (int c = 0; c < ref.getNumChannels(); ++c)
             for (int i = 0; i < ref.getNumSamples(); ++i)
                 maxDiff = juce::jmax (maxDiff, (double) std::abs (ref.getSample (c, i) - res.audio.getSample (c, i)));
-        const bool ok = maxDiff == 0.0 || 20.0 * std::log10 (maxDiff) <= toleranceDb;
+        const double tolerance = toleranceMatch.isEmpty() || spec.name.contains (toleranceMatch) ? toleranceDb : -1000.0;
+        const bool ok = maxDiff == 0.0 || 20.0 * std::log10 (maxDiff) <= tolerance;
         std::printf ("%s  %-40s %s\n", ok ? "ok  " : "FAIL", spec.name.toRawUTF8(), describeDiff (maxDiff).toRawUTF8());
         if (! ok)
         {

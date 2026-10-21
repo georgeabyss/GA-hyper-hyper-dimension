@@ -60,9 +60,10 @@ jobs:
         run: gh release upload "$env:RELEASE_TAG" (Get-ChildItem dist/*.zip).FullName --clobber
 
   # Refactor safety net: the null test and the screenshot check, on an Apple Silicon Mac like the one
-  # the references come from. As strict as locally: bit-identical audio, every pixel identical. If
-  # GitHub's Mac differs (another compiler or font rendering), the first run shows by how much; a
-  # tolerance is then set just above that, never wider.
+  # the references come from. As strict as locally, with one measured exception: GitHub's Mac sums the
+  # linear-phase oversampling filter in a slightly different order (first run: at most -122.7 dB, every
+  # other render identical). So only renders with "linear" in their name get -121 dB, just above that;
+  # an output change of x1.000001 still fails them all. Screenshots were pixel-identical: no tolerance.
   checks:
     if: github.event_name != 'release'
     runs-on: macos-latest
@@ -80,7 +81,7 @@ jobs:
           cmake --build build-tools --target HyperDimNullTest HyperDimScreenshots
 
       - name: Null test
-        run: build-tools/HyperDimNullTest check tests/reference
+        run: build-tools/HyperDimNullTest check tests/reference --tolerance-db -121 --tolerance-match linear
 
       - name: Screenshot check
         if: success() || failure()

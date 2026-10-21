@@ -62,6 +62,11 @@ bit-identical (Phase 7), measure the actual difference first and set the toleran
 never wider. The same goes for CI: it starts as strict as the local check (bit-identical audio,
 `--pixel-tolerance 0`), and a tolerance is only added just above what the first run measures.
 
+First CI run (GitHub's Apple Silicon Mac): screenshots pixel-identical; audio identical except the
+linear-phase oversampling renders (at most −122.7 dB; the FIR filter sums in a different order there).
+CI therefore uses `--tolerance-db -121 --tolerance-match linear`: the other renders stay bit-identical,
+and the ×1.000001 test still fails every render.
+
 Then release Hyper! Hyper! Dimension 0.9.1 (Mac and Windows) from the framework, and only then create the Fase Phucker repo with the framework submodule.
 
 ## Additions for Fase Phucker
