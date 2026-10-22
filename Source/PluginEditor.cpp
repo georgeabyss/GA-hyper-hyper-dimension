@@ -1,4 +1,5 @@
 #include "PluginEditor.h"
+#include "Theme.h"
 
 namespace
 {
@@ -19,7 +20,7 @@ namespace
 
 //==============================================================================
 HyperDimAudioProcessorEditor::HyperDimAudioProcessorEditor (HyperDimAudioProcessor& p)
-    : ga::EditorShell (p, p.apvts, stripHost (p)), panel (p)
+    : ga::EditorShell (p, p.apvts, stripHost (p), hd::theme()), panel (p)
 {
     setPanel (panel, MainPanel::kBaseWidth, MainPanel::kBaseHeight, MainPanel::kMarginX, MainPanel::kMarginY);
 }

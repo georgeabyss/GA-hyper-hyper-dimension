@@ -96,6 +96,7 @@ void MainPanel::updateSections()
 {
     auto value = [this] (const char* id) { return proc.apvts.getRawParameterValue (id)->load(); };
     const bool off = proc.isBypassedNow();
+    const float dim = ga::themeOf (*this).sizes.dimAlpha;
 
     bool changed = ! sectionsKnown || off != allOff;
     for (auto& s : sections)
@@ -112,9 +113,9 @@ void MainPanel::updateSections()
     for (auto& s : sections)
     {
         for (auto* c : s.controls)
-            c->setAlpha (s.on && ! off ? 1.0f : ga::ui::kDimAlpha);
+            c->setAlpha (s.on && ! off ? 1.0f : dim);
         s.led->setLit (s.on);
-        s.led->setAlpha (off ? ga::ui::kDimAlpha : 1.0f);
+        s.led->setAlpha (off ? dim : 1.0f);
     }
 
     allOff = off;
@@ -124,11 +125,13 @@ void MainPanel::updateSections()
 
 void MainPanel::paint (juce::Graphics& g)
 {
+    const auto& theme = ga::themeOf (*this);
+    const float dim = theme.sizes.dimAlpha;
     // transparent: the editor shell draws the faceplate underneath, the header draws the title
     // section headers (the LEDs are components), dimmed while bypassed
     {
         juce::Graphics::ScopedSaveState ss (g);
-        g.setOpacity (allOff ? ga::ui::kDimAlpha : 1.0f);
+        g.setOpacity (allOff ? dim : 1.0f);
         for (auto& s : sections)
             drawHeader (g, s.x, s.w, s.title);
     }
@@ -137,9 +140,9 @@ void MainPanel::paint (juce::Graphics& g)
     auto namesOf = [&] (const Section& s, std::initializer_list<std::pair<float, const char*>> names)
     {
         juce::Graphics::ScopedSaveState ss (g);
-        g.setOpacity (s.on && ! allOff ? 1.0f : ga::ui::kDimAlpha);
+        g.setOpacity (s.on && ! allOff ? 1.0f : dim);
         for (auto& n : names)
-            ga::ui::drawName (g, n.first, (float) kRowCY, n.second);
+            ga::ui::drawName (g, theme, n.first, (float) kRowCY, n.second);
     };
     namesOf (sections[0], { { hyperSlot (0), "Unison" }, { hyperSlot (1), "Retrig" } });
     namesOf (sections[2], { { spSlot (0), "Mode" } });
