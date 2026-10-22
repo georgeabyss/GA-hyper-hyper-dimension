@@ -32,11 +32,12 @@ jobs:
           ref: ${{ github.event.release.tag_name || inputs.release_tag || github.ref }}
           submodules: recursive   # framework/ (ga-framework)
 
-      - name: Get JUCE (the same version as the Mac builds)
-        run: git clone --depth 1 --branch 9.0.4 https://github.com/juce-framework/JUCE.git ../JUCE
+      - name: Get JUCE (the version the framework pins)
+        shell: bash
+        run: git clone --depth 1 --branch "$(cat framework/cmake/juce-version.txt)" https://github.com/juce-framework/JUCE.git ../JUCE
 
       - name: Configure
-        run: cmake -B build -DJUCE_DIR="${{ github.workspace }}/../JUCE"
+        run: cmake -B build
 
       - name: Build
         run: cmake --build build --config Release --parallel
@@ -75,12 +76,12 @@ jobs:
 
       - name: Get JUCE and Ninja
         run: |
-          git clone --depth 1 --branch 9.0.4 https://github.com/juce-framework/JUCE.git ../JUCE
+          git clone --depth 1 --branch "$(cat framework/cmake/juce-version.txt)" https://github.com/juce-framework/JUCE.git ../JUCE
           brew install ninja
 
       - name: Build the test tools
         run: |
-          cmake -B build-tools -G Ninja -DCMAKE_BUILD_TYPE=Release -DJUCE_DIR="$GITHUB_WORKSPACE/../JUCE" -DHHD_NULLTEST=ON -DHHD_SCREENSHOTS=ON
+          cmake -B build-tools -G Ninja -DCMAKE_BUILD_TYPE=Release -DHHD_NULLTEST=ON -DHHD_SCREENSHOTS=ON
           cmake --build build-tools --target HyperDimNullTest HyperDimScreenshots
 
       - name: Null test
