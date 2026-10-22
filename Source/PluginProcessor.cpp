@@ -5,6 +5,14 @@
 
 namespace
 {
+    // what Hyper! Hyper! Dimension uses of the GA processor: everything, plus MIDI input for Retrig
+    ga::ProcessorConfig processorConfig()
+    {
+        ga::ProcessorConfig c;
+        c.midiInput = true;
+        return c;
+    }
+
     // sessions from before v0.7: Unison 0 meant "Hyper off" (Unison now starts at 1)
     void migrateUnison (juce::ValueTree& state)
     {
@@ -64,12 +72,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout HyperDimAudioProcessor::crea
     percent (pid::spaceyAmount, "Spacey Amount", 100.f);
     percent (pid::spaceySpacing, "Spacey Spacing", 50.f);
     // then the GA ones: Bass Mono, Dry/Wet, Bypass, Oversampling, Anti-Alias Filter, Phase Protect
-    ga::addSharedParameters (p);
+    ga::addSharedParameters (p, processorConfig());
     return { p.begin(), p.end() };
 }
 
 HyperDimAudioProcessor::HyperDimAudioProcessor()
-    : ga::ProcessorBase (createParameterLayout())
+    : ga::ProcessorBase (createParameterLayout(), processorConfig())
 {
 }
 
