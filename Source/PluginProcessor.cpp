@@ -5,11 +5,13 @@
 
 namespace
 {
-    // what Hyper! Hyper! Dimension uses of the GA processor: everything, plus MIDI input for Retrig
+    // what Hyper! Hyper! Dimension uses of the GA processor: everything, plus MIDI input for Retrig.
+    // At 100 % its controls are as large as Fase Phucker's (1172 / 750 of these layout pixels x 0.75).
     ga::ProcessorConfig processorConfig()
     {
         ga::ProcessorConfig c;
         c.midiInput = true;
+        c.defaultScale = 1.172f;
         return c;
     }
 

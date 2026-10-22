@@ -54,9 +54,10 @@ namespace
         }
     }
 
-    juce::Image snapshot (juce::Component& c)
+    // at kScale pixels per layout pixel, whatever the window's size at 100 % (the callouts are in layout pixels)
+    juce::Image snapshot (juce::Component& c, float defaultScale)
     {
-        return c.createComponentSnapshot (c.getLocalBounds(), true, kScale);
+        return c.createComponentSnapshot (c.getLocalBounds(), true, kScale / defaultScale);
     }
 
     void save (const juce::Image& image, const juce::File& file)
@@ -285,7 +286,7 @@ int hhdRenderScreenshots (int argc, char** argv)
         proc.apvts.state.setProperty (prop::scopeOpen, false, nullptr);
         std::unique_ptr<juce::AudioProcessorEditor> editor (proc.createEditor());
         play (proc, 3.0);
-        const auto image = snapshot (*editor);
+        const auto image = snapshot (*editor, proc.getConfig().defaultScale);
         save (image, out.getChildFile ("interface.png"));
         save (annotate (image), out.getChildFile ("interface-annotated.png"));
     }
@@ -293,7 +294,7 @@ int hhdRenderScreenshots (int argc, char** argv)
         proc.apvts.state.setProperty (prop::scopeOpen, true, nullptr);
         std::unique_ptr<juce::AudioProcessorEditor> editor (proc.createEditor());
         play (proc, 3.0);
-        save (snapshot (*editor), out.getChildFile ("goniometer.png"));
+        save (snapshot (*editor, proc.getConfig().defaultScale), out.getChildFile ("goniometer.png"));
         proc.apvts.state.setProperty (prop::scopeOpen, false, nullptr);
     }
     proc.presets.setLocked (pid::dryWet, false);
