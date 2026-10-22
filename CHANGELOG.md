@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.2 (beta)
+
+**A bigger window.** At 100 % the window is now as large as 117 % used to be (940 x 225 pixels), the
+size of the GA family's next plug-in. Sessions saved at 100 % open at the new 100 %; other sizes
+grow by the same step. The sound is unchanged: every render was checked against 0.9.1.
+
+- **Bypassed, everything dims:** the section titles and the Unison, Retrig and Mode names now dim
+  with the rest (they used to stay bright).
+- **Under the hood:** the sections are built from the GA framework's new parts, shared with the next
+  GA plug-ins.
+
 ## 0.9.1 (beta)
 
 **Same plug-in, new foundation.** Hyper! Hyper! Dimension now runs on the GA framework, the shared
