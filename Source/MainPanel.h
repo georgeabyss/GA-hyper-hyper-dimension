@@ -2,18 +2,21 @@
 
 #include "PluginProcessor.h"
 #include "ui/Controls.h"
-#include "presets/PresetBar.h"
+#include "ui/Header.h"
+#include "ui/EditorShell.h"
 
-// Title, preset bar and the three sections, at 100 %. It sits on the GA editor shell's faceplate,
-// which adds the bottom strip, the goniometer and the scaling.
-class MainPanel : public juce::Component, private juce::Timer
+// Title, preset bar, the three sections and the bottom strip, at 100 %. It sits on the GA editor
+// shell's faceplate, which adds the goniometer and the scaling.
+class MainPanel : public ga::Panel, private juce::Timer
 {
 public:
     static constexpr int kBaseWidth = 802, kBaseHeight = 192;   // size at 100 %, bottom strip included
+    static constexpr int kMarginX = 26, kMarginY = 8;           // around the content
 
     explicit MainPanel (HyperDimAudioProcessor&);
     ~MainPanel() override;
 
+    void layout (juce::Rectangle<int> content, ga::BottomStrip&) override;
     void paint (juce::Graphics&) override;
     void resized() override;
 
@@ -36,7 +39,7 @@ private:
 
     HyperDimAudioProcessor& proc;
 
-    ga::PresetBar presetBar;   // in the title bar, between the name and the GA logo
+    ga::Header header;   // title, preset bar and the GA logo
 
     // HYPER | DIMENSION | SPACEY, each ending with its amount
     ga::StepBox unison;

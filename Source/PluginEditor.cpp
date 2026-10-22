@@ -21,5 +21,5 @@ namespace
 HyperDimAudioProcessorEditor::HyperDimAudioProcessorEditor (HyperDimAudioProcessor& p)
     : ga::EditorShell (p, p.apvts, stripHost (p)), panel (p)
 {
-    setPanel (panel, MainPanel::kBaseWidth, MainPanel::kBaseHeight);
+    setPanel (panel, MainPanel::kBaseWidth, MainPanel::kBaseHeight, MainPanel::kMarginX, MainPanel::kMarginY);
 }

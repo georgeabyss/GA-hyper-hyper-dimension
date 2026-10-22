@@ -3,7 +3,9 @@
 
 namespace
 {
-    // ---- layout at 100 % (802 x 192; the bottom strip and the goniometer come from the editor shell) ---
+    // ---- layout at 100 % (802 x 192, the content inside the margins; the goniometer comes from the editor shell)
+    constexpr int   kHeaderInset = 4, kHeaderTop = 6, kHeaderHeight = 26;   // the title row, inside the content
+    constexpr int   kPresetHeight = 24, kPresetOffset = 1;                  // the preset bar, nudged from the centre
     constexpr int   kPanelY = 52;
     constexpr int   kRowCY  = kPanelY + 50;    // centre line of all controls
     constexpr float kPitch  = 66.0f;           // the three sections fill the whole width
@@ -14,8 +16,6 @@ namespace
     float hyperSlot (int i) { return (float) kHyperX + kPitch * ((float) i + 0.5f); }
     float dimSlot   (int i) { return (float) kDimX   + kPitch * ((float) i + 0.5f); }
     float spSlot    (int i) { return (float) kSpX    + kPitch * ((float) i + 0.5f); }
-
-    constexpr int   kPresetX = 352, kPresetY = 15, kPresetW = 238, kPresetH = 24;   // centred between title and logo
 
     // section name and the rule underneath (the LED is a component)
     void drawHeader (juce::Graphics& g, int x, int w, const juce::String& title)
@@ -37,7 +37,7 @@ namespace
 
 MainPanel::MainPanel (HyperDimAudioProcessor& p)
     : proc (p),
-      presetBar (p.presets),
+      header (p.presets, "HYPER! HYPER!", "DIMENSION"),
       unison (parameter (p, pid::unison)),
       rate   (parameter (p, pid::rate),     "Rate"),
       detune (parameter (p, pid::detune),   "Detune"),
@@ -59,13 +59,14 @@ MainPanel::MainPanel (HyperDimAudioProcessor& p)
             addAndMakeVisible (c);
         addAndMakeVisible (s.led);
     }
-    addAndMakeVisible (presetBar);
+    addAndMakeVisible (header);
+    header.setPresetBar (kPresetHeight, kPresetOffset);
 
     using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
     retrigAtt = std::make_unique<ButtonAttachment> (p.apvts, pid::retrig, retrig);
 
-    presetBar.isMuted = [&p] { return p.isSafetyMuted(); };
-    presetBar.resume = [&p] { p.resumeAfterSafetyMute(); };
+    header.presetBar.isMuted = [&p] { return p.isSafetyMuted(); };
+    header.presetBar.resume = [&p] { p.resumeAfterSafetyMute(); };
     for (size_t i = 0; i < sections.size(); ++i)
         ledAtt[i] = std::make_unique<ButtonAttachment> (p.apvts, sections[i].onId, *sections[i].led);
 
@@ -88,7 +89,7 @@ MainPanel::~MainPanel()
 void MainPanel::timerCallback()
 {
     updateSections();
-    presetBar.refresh();
+    header.presetBar.refresh();
 }
 
 void MainPanel::updateSections()
@@ -123,10 +124,7 @@ void MainPanel::updateSections()
 
 void MainPanel::paint (juce::Graphics& g)
 {
-    // transparent: the editor shell draws the faceplate underneath
-    ga::ui::drawTitle (g, "HYPER! HYPER!", "DIMENSION");
-    ga::ui::drawLogo (g, (float) kBaseWidth - 30.0f, 14.0f);   // top right of the main panel, never higher than the title
-
+    // transparent: the editor shell draws the faceplate underneath, the header draws the title
     // section headers (the LEDs are components), dimmed while bypassed
     {
         juce::Graphics::ScopedSaveState ss (g);
@@ -147,6 +145,12 @@ void MainPanel::paint (juce::Graphics& g)
     namesOf (sections[2], { { spSlot (0), "Mode" } });
 }
 
+void MainPanel::layout (juce::Rectangle<int> content, ga::BottomStrip& strip)
+{
+    header.setArea (content.reduced (kHeaderInset, 0).withTrimmedTop (kHeaderTop).withHeight (kHeaderHeight));
+    strip.setArea (content.removeFromBottom (ga::BottomStrip::heightForWidth (content.getWidth())));
+}
+
 void MainPanel::resized()
 {
     const int cy = kRowCY;
@@ -158,8 +162,6 @@ void MainPanel::resized()
     {
         k.setBounds (juce::roundToInt (cx) - 28, cy - 22, 56, 70);
     };
-
-    presetBar.setBounds (kPresetX, kPresetY, kPresetW, kPresetH);
 
     place (unison, hyperSlot (0), 30, 30);
     place (retrig, hyperSlot (1), 16, 16);
