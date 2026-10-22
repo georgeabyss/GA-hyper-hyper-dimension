@@ -6,28 +6,8 @@ namespace
     // ---- layout at 100 % (802 x 192, the content inside the margins; the goniometer comes from the editor shell)
     constexpr int   kHeaderInset = 4, kHeaderTop = 6, kHeaderHeight = 26;   // the title row, inside the content
     constexpr int   kPresetHeight = 24, kPresetOffset = 1;                  // the preset bar, nudged from the centre
-    constexpr int   kPanelY = 52;
-    constexpr int   kRowCY  = kPanelY + 50;    // centre line of all controls
-    constexpr float kPitch  = 66.0f;           // the three sections fill the whole width
-    constexpr int   kHyperX = 26,  kHyperW = 396;
-    constexpr int   kDimX   = 434, kDimW   = 132;
-    constexpr int   kSpX    = 578, kSpW    = 198;   // "Spacey" (the widener)
-
-    float hyperSlot (int i) { return (float) kHyperX + kPitch * ((float) i + 0.5f); }
-    float dimSlot   (int i) { return (float) kDimX   + kPitch * ((float) i + 0.5f); }
-    float spSlot    (int i) { return (float) kSpX    + kPitch * ((float) i + 0.5f); }
-
-    // section name and the rule underneath (the LED is a component)
-    void drawHeader (juce::Graphics& g, int x, int w, const juce::String& title)
-    {
-        g.setFont (ga::ui::font (8.0f, true, 0.16f));
-        g.setColour (juce::Colour (0xff8f92a0));
-        g.drawText (title, x + 2, kPanelY + 5, 120, 10, juce::Justification::centredLeft, false);
-        g.setColour (juce::Colours::black);
-        g.drawHorizontalLine (kPanelY + 20, (float) x, (float) (x + w));
-        g.setColour (juce::Colour (0xff2a2c31));
-        g.drawHorizontalLine (kPanelY + 21, (float) x, (float) (x + w));
-    }
+    constexpr int   kSectionsTop = 44, kSectionsHeight = 100;               // the row of sections, inside the content
+    constexpr int   kColumns = 11, kSectionGap = 12;                        // HYPER! | DIMENSION | SPACEY: 6 | 2 | 3 columns
 
     juce::RangedAudioParameter& parameter (HyperDimAudioProcessor& p, const char* id)
     {
@@ -49,15 +29,25 @@ MainPanel::MainPanel (HyperDimAudioProcessor& p)
       wspace (parameter (p, pid::spaceySpacing), "Spacing", true),   // centre = the original setting
       wamt   (parameter (p, pid::spaceyAmount),  "Amount")
 {
-    sections[0] = { "HYPER!",    kHyperX, kHyperW, pid::hyperOn,  pid::hyperMix,     &hyperLed,  { &unison, &retrig, &rate, &detune, &spread, &hmix } };
-    sections[1] = { "DIMENSION", kDimX,   kDimW,   pid::dimOn,    pid::dimMix,       &dimLed,    { &dsize, &dmix } };
-    sections[2] = { "SPACEY",    kSpX,    kSpW,    pid::spaceyOn, pid::spaceyAmount, &spaceyLed, { &wideMode, &wspace, &wamt } };
+    sections[0] = { &hyper,     pid::hyperOn,  pid::hyperMix,     &hyperLed };
+    sections[1] = { &dimension, pid::dimOn,    pid::dimMix,       &dimLed };
+    sections[2] = { &spacey,    pid::spaceyOn, pid::spaceyAmount, &spaceyLed };
 
+    hyper.setControl (0, unison, "Unison");
+    hyper.setControl (1, retrig, "Retrig");
+    hyper.setControl (2, rate);
+    hyper.setControl (3, detune);
+    hyper.setControl (4, spread);
+    hyper.setControl (5, hmix);
+    dimension.setControl (0, dsize);
+    dimension.setControl (1, dmix);
+    spacey.setControl (0, wideMode, "Mode");
+    spacey.setControl (1, wspace);
+    spacey.setControl (2, wamt);
     for (auto& s : sections)
     {
-        for (auto* c : s.controls)
-            addAndMakeVisible (c);
-        addAndMakeVisible (s.led);
+        s.view->setHeaderControls ({ s.led });
+        addAndMakeVisible (s.view);
     }
     addAndMakeVisible (header);
     header.setPresetBar (kPresetHeight, kPresetOffset);
@@ -96,7 +86,6 @@ void MainPanel::updateSections()
 {
     auto value = [this] (const char* id) { return proc.apvts.getRawParameterValue (id)->load(); };
     const bool off = proc.isBypassedNow();
-    const float dim = ga::themeOf (*this).sizes.dimAlpha;
 
     bool changed = ! sectionsKnown || off != allOff;
     for (auto& s : sections)
@@ -112,75 +101,21 @@ void MainPanel::updateSections()
     // that shapes the sound (the bottom strip dims its own controls).
     for (auto& s : sections)
     {
-        for (auto* c : s.controls)
-            c->setAlpha (s.on && ! off ? 1.0f : dim);
+        s.view->setDimmed (off, ! s.on || off);
         s.led->setLit (s.on);
-        s.led->setAlpha (off ? dim : 1.0f);
     }
 
     allOff = off;
     sectionsKnown = true;
-    repaint();   // headers and the names of Unison, Retrig and Mode are drawn here
-}
-
-void MainPanel::paint (juce::Graphics& g)
-{
-    const auto& theme = ga::themeOf (*this);
-    const float dim = theme.sizes.dimAlpha;
-    // transparent: the editor shell draws the faceplate underneath, the header draws the title
-    // section headers (the LEDs are components), dimmed while bypassed
-    {
-        juce::Graphics::ScopedSaveState ss (g);
-        g.setOpacity (allOff ? dim : 1.0f);
-        for (auto& s : sections)
-            drawHeader (g, s.x, s.w, s.title);
-    }
-
-    // names for the controls that do not draw their own (dimmed with their section)
-    auto namesOf = [&] (const Section& s, std::initializer_list<std::pair<float, const char*>> names)
-    {
-        juce::Graphics::ScopedSaveState ss (g);
-        g.setOpacity (s.on && ! allOff ? 1.0f : dim);
-        for (auto& n : names)
-            ga::ui::drawName (g, theme, n.first, (float) kRowCY, n.second);
-    };
-    namesOf (sections[0], { { hyperSlot (0), "Unison" }, { hyperSlot (1), "Retrig" } });
-    namesOf (sections[2], { { spSlot (0), "Mode" } });
 }
 
 void MainPanel::layout (juce::Rectangle<int> content, ga::BottomStrip& strip)
 {
     header.setArea (content.reduced (kHeaderInset, 0).withTrimmedTop (kHeaderTop).withHeight (kHeaderHeight));
     strip.setArea (content.removeFromBottom (ga::BottomStrip::heightForWidth (content.getWidth())));
-}
 
-void MainPanel::resized()
-{
-    const int cy = kRowCY;
-    auto place = [cy] (juce::Component& c, float cx, int w, int h)
-    {
-        c.setBounds (juce::Rectangle<int> (w, h).withCentre ({ juce::roundToInt (cx), cy }));
-    };
-    auto placeKnob = [cy] (juce::Component& k, float cx)
-    {
-        k.setBounds (juce::roundToInt (cx) - 28, cy - 22, 56, 70);
-    };
-
-    place (unison, hyperSlot (0), 30, 30);
-    place (retrig, hyperSlot (1), 16, 16);
-    placeKnob (rate,   hyperSlot (2));
-    placeKnob (detune, hyperSlot (3));
-    placeKnob (spread, hyperSlot (4));
-    placeKnob (hmix,   hyperSlot (5));
-
-    placeKnob (dsize, dimSlot (0));
-    placeKnob (dmix,  dimSlot (1));
-
-    place (wideMode, spSlot (0), 64, 19);
-    placeKnob (wspace, spSlot (1));
-    placeKnob (wamt,   spSlot (2));
-
-    // LEDs at the right end of each header, in line with the section name
-    for (auto& s : sections)
-        s.led->setBounds (juce::Rectangle<int> (14, 14).withCentre ({ s.x + s.w - 10, kPanelY + 10 }));
+    const ga::ColumnGrid grid (content.withTrimmedTop (kSectionsTop).withHeight (kSectionsHeight), kColumns, kSectionGap, { 6, 2, 3 });
+    hyper.setBounds (grid.section (0));
+    dimension.setBounds (grid.section (1));
+    spacey.setBounds (grid.section (2));
 }
